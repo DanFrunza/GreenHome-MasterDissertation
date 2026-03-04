@@ -1,17 +1,17 @@
-# Ignoră mediul virtual Python
+#Venv
 .venv/
 
-# Ignoră tot folderul Home Assistant
+#Persistent memory for the smart home system
 HA/
 
-# Ignoră fișiere log, baze de date și secrete
+#Logs, databases, and secrets
 *.log
 *.db
 secrets.yaml
 
-# Ignoră fișiere generate automat
+#Auto-generated files
 __pycache__/
 *.pyc
 
-# Ignoră fișiere de configurare locale
+#Environment variables
 .env

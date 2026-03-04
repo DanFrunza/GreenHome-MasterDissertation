@@ -1,0 +1,17 @@
+# Ignoră mediul virtual Python
+.venv/
+
+# Ignoră tot folderul Home Assistant
+HA/
+
+# Ignoră fișiere log, baze de date și secrete
+*.log
+*.db
+secrets.yaml
+
+# Ignoră fișiere generate automat
+__pycache__/
+*.pyc
+
+# Ignoră fișiere de configurare locale
+.env

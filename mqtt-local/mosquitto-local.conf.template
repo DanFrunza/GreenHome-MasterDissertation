@@ -1,0 +1,18 @@
+# mosquitto-local.conf.template
+persistence true
+log_dest stdout
+
+listener 1883 0.0.0.0
+allow_anonymous true
+
+connection cloud
+address mqtt-cloud:1883
+try_private false
+start_type automatic
+cleansession true
+bridge_attempt_unsubscribe false
+
+topic home/mqtt/# out 0 "" HOME_ID/
+topic home/native/# out 0 "" HOME_ID/
+
+topic HOME_ID/backend/# in 0 "" HOME_ID/

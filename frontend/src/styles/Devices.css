@@ -1,0 +1,195 @@
+/* Devices Page */
+.devices-container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.devices-title {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.devices-subtitle {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  font-weight: var(--font-weight-normal);
+}
+
+.devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Device List Card */
+.device-list-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.device-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--accent-bg);
+  margin: 0;
+  border-bottom: none;
+}
+
+.device-list-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.device-list-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--foreground);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.device-list-source {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+.device-list-source strong {
+  color: var(--primary);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  width: 50px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cccccc;
+  border-radius: 13px;
+  transition: 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+/* Attributes Section */
+.device-list-attributes {
+  padding: 1rem;
+  background-color: var(--card);
+}
+
+.device-list-attributes h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+.attributes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.attribute-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--muted);
+  border-radius: 0.375rem;
+}
+
+.attribute-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.attribute-name {
+  font-weight: 600;
+  color: var(--foreground);
+  min-width: 120px;
+}
+
+.attribute-ha-id {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  font-family: monospace;
+}
+
+/* Edit Button */
+.edit-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.edit-btn:hover {
+  opacity: 0.8;
+}
+
+.edit-btn:active {
+  opacity: 0.7;
+}

@@ -1,0 +1,12 @@
+/* Global Layout Container */
+.container,
+.layout-container {
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+/* Common Spacing */
+.content-padding {
+  padding-left: 10%;
+  padding-right: 10%;
+}

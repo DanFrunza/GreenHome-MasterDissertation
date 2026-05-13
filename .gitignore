@@ -1,5 +1,9 @@
 #Venv
 .venv/
+venv/
+
+#Node modules
+node_modules/
 
 #Persistent memory for the smart home system
 HA/
@@ -15,3 +19,11 @@ __pycache__/
 
 #Environment variables
 .env
+
+#Persistent data volumes (Docker)
+minio/minio-data/
+mqtt-local/data/
+database/postgres-data/
+
+#Generated config from template
+mqtt-local/mosquitto-local.conf

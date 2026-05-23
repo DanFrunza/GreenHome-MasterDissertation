@@ -4,8 +4,14 @@
   padding-bottom: 2rem;
 }
 
+.devices-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
 .devices-title {
-  margin-top: 2rem;
+  margin-top: 0;
   margin-bottom: 0.5rem;
   font-size: 2rem;
   font-weight: var(--font-weight-medium);
@@ -171,6 +177,26 @@
   color: var(--muted-foreground);
   font-size: 0.9rem;
   font-family: monospace;
+}
+
+/* Switch Control */
+.switch-control {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.switch-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  min-width: 28px;
+  text-align: right;
+}
+
+.toggle-loading {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Edit Button */

@@ -1,8 +1,10 @@
 from database import get_connection
 
-def handle_measurement(home_id, device_id, source, attribute, payload):
+def handle_measurement(home_id, entity_id, payload):
+    is_unavailable = payload.strip() == "unavailable"
+
     try:
-        numeric = float(payload)
+        numeric = float(payload) if not is_unavailable else None
     except ValueError:
         numeric = None
 
@@ -17,21 +19,16 @@ def handle_measurement(home_id, device_id, source, attribute, payload):
         return
 
     cur.execute("""
-        UPDATE homes SET status = 'online', last_seen = NOW()
-        WHERE id = %s
-    """, (home_id,))
+        UPDATE entities
+        SET state = %s, available = %s, last_seen = NOW()
+        WHERE home_id = %s AND entity_id = %s
+    """, (payload, not is_unavailable, home_id, entity_id))
 
-    cur.execute("""
-        INSERT INTO devices (home_id, device_id, source, available, last_seen)
-        VALUES (%s, %s, %s, true, NOW())
-        ON CONFLICT (home_id, device_id) DO UPDATE
-        SET available = true, last_seen = NOW()
-    """, (home_id, device_id, source))
-
-    cur.execute("""
-        INSERT INTO measurements (home_id, device_id, attribute, value, value_numeric)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (home_id, device_id, attribute, payload, numeric))
+    if not is_unavailable:
+        cur.execute("""
+            INSERT INTO measurements (home_id, entity_id, value, value_numeric)
+            VALUES (%s, %s, %s, %s)
+        """, (home_id, entity_id, payload, numeric))
 
     conn.commit()
     cur.close()

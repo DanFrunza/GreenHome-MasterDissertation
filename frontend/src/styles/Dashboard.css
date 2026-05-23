@@ -5,7 +5,7 @@
 }
 
 .dashboard-title {
-  margin-top: 2rem;
+  margin-top: 0;
   margin-bottom: 0.5rem;
   font-size: 2rem;
   font-weight: var(--font-weight-medium);

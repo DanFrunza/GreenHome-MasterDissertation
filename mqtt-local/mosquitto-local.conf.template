@@ -12,7 +12,7 @@ start_type automatic
 cleansession true
 bridge_attempt_unsubscribe false
 
-topic home/mqtt/# out 0 "" HOME_ID/
-topic home/native/# out 0 "" HOME_ID/
+topic home/ha/# out 0 "" HOME_ID/
+topic home/system/# out 0 "" HOME_ID/
 
-topic HOME_ID/backend/# in 0 "" HOME_ID/
+topic backend/# in 0 "" HOME_ID/

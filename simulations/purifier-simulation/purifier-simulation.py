@@ -1,6 +1,5 @@
 import time
 import random
-import json
 import paho.mqtt.client as mqtt
 
 MQTT_BROKER = "mqtt-local"
@@ -14,7 +13,6 @@ STATE_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/state"
 POWER_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/power"
 AVAIL_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/available"
 CONTROL_TOPIC  = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/control"
-REGISTER_TOPIC = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/register"
 
 pm25 = 30.0
 purifier_on = False
@@ -28,13 +26,6 @@ def on_connect(client, userdata, flags, rc):
         print(f"[{DEVICE_ID}] Connected")
         client.publish(AVAIL_TOPIC, "online", retain=True)
         client.subscribe(CONTROL_TOPIC)
-        client.publish(REGISTER_TOPIC, json.dumps({
-            "attributes": {
-                "pm25":  { "unit": "µg/m³", "ha_entity_id": "sensor.pm2_5" },
-                "state": { "unit": None,    "ha_entity_id": "switch.purifier" },
-                "power": { "unit": "W",     "ha_entity_id": "sensor.purifier_power" }
-            }
-        }), retain=True)
     else:
         print(f"Connection failed: {rc}")
 

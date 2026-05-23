@@ -125,6 +125,51 @@ router.get('/:entity_id/hourly-profile', async (req, res) => {
     }
 });
 
+// GET /homes/:home_id/entities/:entity_id/hourly-profile-split?from=&to=&tz=
+router.get('/:entity_id/hourly-profile-split', async (req, res) => {
+    const { home_id, entity_id } = req.params;
+    const { from, to, tz = 'UTC' } = req.query;
+
+    try {
+        let query = `
+            SELECT
+                EXTRACT(HOUR FROM recorded_at AT TIME ZONE $3) AS hour,
+                CASE WHEN EXTRACT(DOW FROM recorded_at AT TIME ZONE $3) IN (0, 6)
+                     THEN 'weekend' ELSE 'weekday' END AS day_type,
+                AVG(value_numeric) AS avg_value,
+                COUNT(*)           AS count
+            FROM measurements
+            WHERE home_id = $1 AND entity_id = $2 AND value_numeric IS NOT NULL
+        `;
+        const params = [home_id, entity_id, tz];
+        let idx = 4;
+
+        if (from) { query += ` AND recorded_at >= $${idx++}`; params.push(from); }
+        if (to)   { query += ` AND recorded_at <= $${idx++}`; params.push(to); }
+
+        query += ' GROUP BY hour, day_type ORDER BY hour, day_type';
+
+        const result = await pool.query(query, params);
+        const grid = {};
+        result.rows.forEach(r => {
+            const h = parseInt(r.hour);
+            if (!grid[h]) grid[h] = {};
+            grid[h][r.day_type] = { avg_value: parseFloat(r.avg_value), count: parseInt(r.count) };
+        });
+
+        const hours = Array.from({ length: 24 }, (_, h) => ({
+            hour: h,
+            weekday_avg:   grid[h]?.weekday?.avg_value ?? null,
+            weekday_count: grid[h]?.weekday?.count     ?? 0,
+            weekend_avg:   grid[h]?.weekend?.avg_value ?? null,
+            weekend_count: grid[h]?.weekend?.count     ?? 0,
+        }));
+        res.json(hours);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /homes/:home_id/entities/:entity_id/heatmap?from=&to=&tz=
 router.get('/:entity_id/heatmap', async (req, res) => {
     const { home_id, entity_id } = req.params;

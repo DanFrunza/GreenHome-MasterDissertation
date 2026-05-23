@@ -3,10 +3,12 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 
 export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) {
-  const svgRef = useRef()
+  const svgRef       = useRef()
   const containerRef = useRef()
-  const [data, setData] = useState([])
+  const wrapperRef   = useRef()
+  const [data, setData]       = useState([])
   const [loading, setLoading] = useState(true)
+  const [tooltip, setTooltip] = useState(null)
 
   useEffect(() => {
     if (!homeId || !entityId) return
@@ -34,7 +36,7 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
 
     const containerWidth = containerRef.current.getBoundingClientRect().width || 600
     const margin = { top: 8, right: 16, bottom: 35, left: 48 }
-    const width = containerWidth
+    const width  = containerWidth
     const height = 180
 
     const svg = d3.select(svgRef.current)
@@ -53,6 +55,7 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
       .domain([minVal - pad, maxVal + pad])
       .range([height - margin.bottom, margin.top])
 
+    // Grid lines
     svg.append('g')
       .selectAll('line')
       .data(yScale.ticks(4))
@@ -61,45 +64,28 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
       .attr('y1', d => yScale(d)).attr('y2', d => yScale(d))
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
-    const areaRange = d3.area()
-      .x(d => xScale(d.date))
-      .y0(d => yScale(d.min))
-      .y1(d => yScale(d.max))
-      .curve(d3.curveMonotoneX)
-
+    // Min-max band
     svg.append('path')
       .datum(parsed)
-      .attr('d', areaRange)
-      .attr('fill', 'var(--accent)')
-      .attr('opacity', 0.1)
+      .attr('d', d3.area().x(d => xScale(d.date)).y0(d => yScale(d.min)).y1(d => yScale(d.max)).curve(d3.curveMonotoneX))
+      .attr('fill', 'var(--accent)').attr('opacity', 0.1)
 
-    const area = d3.area()
-      .x(d => xScale(d.date))
-      .y0(height - margin.bottom)
-      .y1(d => yScale(d.avg))
-      .curve(d3.curveMonotoneX)
-
+    // Area under avg
     svg.append('path')
       .datum(parsed)
-      .attr('d', area)
-      .attr('fill', 'var(--accent)')
-      .attr('opacity', 0.15)
+      .attr('d', d3.area().x(d => xScale(d.date)).y0(height - margin.bottom).y1(d => yScale(d.avg)).curve(d3.curveMonotoneX))
+      .attr('fill', 'var(--accent)').attr('opacity', 0.15)
 
-    const line = d3.line()
-      .x(d => xScale(d.date))
-      .y(d => yScale(d.avg))
-      .curve(d3.curveMonotoneX)
-
+    // Avg line
     svg.append('path')
       .datum(parsed)
-      .attr('d', line)
-      .attr('fill', 'none')
-      .attr('stroke', 'var(--accent)')
-      .attr('stroke-width', 2)
+      .attr('d', d3.line().x(d => xScale(d.date)).y(d => yScale(d.avg)).curve(d3.curveMonotoneX))
+      .attr('fill', 'none').attr('stroke', 'var(--accent)').attr('stroke-width', 2)
 
+    // Dots (when few points)
+    const dotsG = svg.append('g')
     if (parsed.length <= 35) {
-      svg.append('g')
-        .selectAll('circle')
+      dotsG.selectAll('circle')
         .data(parsed)
         .join('circle')
         .attr('cx', d => xScale(d.date))
@@ -108,41 +94,94 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
         .attr('fill', 'var(--accent)')
     }
 
-    const tickCount = aggPeriod === 'month' ? 6 : 7
-    const timeFmt = aggPeriod === 'month'
-      ? d3.timeFormat('%b %y')
-      : d3.timeFormat('%d %b')
+    // Crosshair group (hidden by default)
+    const crosshair = svg.append('g').attr('display', 'none')
+    crosshair.append('line')
+      .attr('class', 'crosshair-line')
+      .attr('y1', margin.top).attr('y2', height - margin.bottom)
+      .attr('stroke', 'var(--muted-foreground)').attr('stroke-width', 1)
+      .attr('stroke-dasharray', '4 3')
+    crosshair.append('circle')
+      .attr('class', 'crosshair-dot')
+      .attr('r', 5)
+      .attr('fill', 'var(--accent)')
+      .attr('stroke', 'var(--card)').attr('stroke-width', 2)
 
-    const xAxis = d3.axisBottom(xScale).ticks(tickCount).tickFormat(timeFmt).tickSize(0)
+    // Axes
+    const tickCount = aggPeriod === 'month' ? 6 : 7
+    const timeFmt = aggPeriod === 'month' ? d3.timeFormat('%b %y') : d3.timeFormat('%d %b')
     svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(xAxis)
+      .call(d3.axisBottom(xScale).ticks(tickCount).tickFormat(timeFmt).tickSize(0))
       .call(g => g.select('.domain').attr('stroke', 'var(--border)'))
-      .call(g => g.selectAll('text')
-        .attr('fill', 'var(--muted-foreground)')
-        .attr('font-size', '0.72rem')
-        .attr('dy', '1.1em'))
+      .call(g => g.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', '0.72rem').attr('dy', '1.1em'))
 
-    const yAxis = d3.axisLeft(yScale).ticks(4).tickSize(0)
-      .tickFormat(v => d3.format('.2~f')(v) + (unit ? ` ${unit}` : ''))
     svg.append('g')
       .attr('transform', `translate(${margin.left},0)`)
-      .call(yAxis)
+      .call(d3.axisLeft(yScale).ticks(4).tickSize(0).tickFormat(v => d3.format('.2~f')(v) + (unit ? ` ${unit}` : '')))
       .call(g => g.select('.domain').remove())
-      .call(g => g.selectAll('text')
-        .attr('fill', 'var(--muted-foreground)')
-        .attr('font-size', '0.72rem')
-        .attr('x', -6)
-        .attr('text-anchor', 'end'))
+      .call(g => g.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', '0.72rem').attr('x', -6).attr('text-anchor', 'end'))
+
+    // Invisible overlay for mouse events
+    const bisect = d3.bisector(d => d.date).left
+    const dateFmt = aggPeriod === 'month'
+      ? d => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+      : d => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+
+    svg.append('rect')
+      .attr('x', margin.left).attr('y', margin.top)
+      .attr('width', width - margin.left - margin.right)
+      .attr('height', height - margin.top - margin.bottom)
+      .attr('fill', 'transparent')
+      .style('cursor', 'crosshair')
+      .on('mouseenter', () => crosshair.attr('display', null))
+      .on('mouseleave', () => {
+        crosshair.attr('display', 'none')
+        setTooltip(null)
+      })
+      .on('mousemove', function (event) {
+        const [mouseX] = d3.pointer(event)
+        const x0 = xScale.invert(mouseX)
+        const i  = bisect(parsed, x0)
+        const d0 = parsed[i - 1]
+        const d1 = parsed[i]
+        const d  = !d0 ? d1 : !d1 ? d0 : (x0 - d0.date) > (d1.date - x0) ? d1 : d0
+
+        crosshair.select('.crosshair-line').attr('x1', xScale(d.date)).attr('x2', xScale(d.date))
+        crosshair.select('.crosshair-dot').attr('cx', xScale(d.date)).attr('cy', yScale(d.avg))
+
+        const box = wrapperRef.current.getBoundingClientRect()
+        setTooltip({
+          x: event.clientX - box.left,
+          y: event.clientY - box.top,
+          label: dateFmt(d.date),
+          avg: d.avg,
+          min: d.min,
+          max: d.max,
+        })
+      })
 
   }, [data, unit, aggPeriod])
 
   if (loading) return <p className="stats-loading">Loading...</p>
   if (!data.length) return <p className="stats-empty">No aggregated data for this period.</p>
 
+  const fmt = v => `${Number(v).toFixed(2)}${unit ? ` ${unit}` : ''}`
+
   return (
-    <div ref={containerRef} style={{ width: '100%' }}>
-      <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+    <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
+      <div ref={containerRef} style={{ width: '100%' }}>
+        <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+      </div>
+      {tooltip && (
+        <div className="heatmap-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y - 10 }}>
+          <span className="heatmap-tooltip-label">{tooltip.label}</span>
+          <span className="heatmap-tooltip-value">{fmt(tooltip.avg)}</span>
+          <span className="heatmap-tooltip-count">
+            Min {fmt(tooltip.min)} · Max {fmt(tooltip.max)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

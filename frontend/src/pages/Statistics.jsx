@@ -1,47 +1,55 @@
 import { useEffect, useState } from 'react'
 import { useHome } from '../context/HomeContext'
 import { API_URL } from '../config'
+import { inferDeviceName, shortLabel } from '../utils/deviceUtils'
 import HourlyProfileChart from '../components/HourlyProfileChart'
 import TrendChart from '../components/TrendChart'
 import HeatmapChart from '../components/HeatmapChart'
 import '../styles/Statistics.css'
 
-function inferDeviceName(entities) {
-  if (!entities?.length) return 'Unknown Device'
-  if (entities.length === 1) return entities[0].friendly_name || 'Unknown Device'
-  const words = entities.map(e => (e.friendly_name || '').split(' '))
-  let prefix = words[0]
-  for (let i = 1; i < words.length; i++) {
-    let j = 0
-    while (j < prefix.length && j < words[i].length && prefix[j] === words[i][j]) j++
-    prefix = prefix.slice(0, j)
-  }
-  return prefix.join(' ') || entities[0].friendly_name || 'Unknown Device'
-}
-
-function shortLabel(friendlyName, deviceName) {
-  const stripped = friendlyName?.startsWith(deviceName)
-    ? friendlyName.slice(deviceName.length).trim()
-    : friendlyName
-  return stripped || friendlyName
-}
-
 const PERIODS = [
-  { key: '7D',  label: '7 Days',  days: 7,   aggPeriod: 'day'  },
-  { key: '30D', label: '30 Days', days: 30,  aggPeriod: 'day'  },
-  { key: '3M',  label: '3 Months',days: 90,  aggPeriod: 'week' },
-  { key: '1Y',  label: '1 Year',  days: 365, aggPeriod: 'month'},
+  { key: '7D',  label: '7 Days',   days: 7,   aggPeriod: 'day',   aggLabel: 'day'   },
+  { key: '30D', label: '30 Days',  days: 30,  aggPeriod: 'day',   aggLabel: 'day'   },
+  { key: '3M',  label: '3 Months', days: 90,  aggPeriod: 'week',  aggLabel: 'week'  },
+  { key: '1Y',  label: '1 Year',   days: 365, aggPeriod: 'month', aggLabel: 'month' },
 ]
 
-function StatCard({ label, value, unit, sub }) {
+function InfoTooltip({ children }) {
+  return (
+    <span className="info-tooltip-wrap">
+      <span className="info-icon">i</span>
+      <span className="info-tooltip-box">{children}</span>
+    </span>
+  )
+}
+
+function StatCard({ label, value, unit, sub, tooltip }) {
   return (
     <div className="stat-card">
-      <span className="stat-card-label">{label}</span>
+      <span className="stat-card-label">
+        {label}
+        {tooltip && <InfoTooltip>{tooltip}</InfoTooltip>}
+      </span>
       <span className="stat-card-value">
         {value != null ? Number(value).toFixed(2) : '—'}
         {value != null && unit && <span className="stat-card-unit"> {unit}</span>}
       </span>
       {sub && <span className="stat-card-sub">{sub}</span>}
+    </div>
+  )
+}
+
+function TrendLegend() {
+  return (
+    <div className="chart-legend">
+      <span className="legend-item">
+        <span className="legend-line" />
+        Average
+      </span>
+      <span className="legend-item">
+        <span className="legend-band" />
+        Min – Max range
+      </span>
     </div>
   )
 }
@@ -66,7 +74,10 @@ export default function Statistics() {
             .map(e => ({ ...e, label: shortLabel(e.friendly_name, deviceName), deviceName }))
         })
         setEntities(sensors)
-        if (sensors.length > 0) setSelectedEntity(sensors[0])
+        setSelectedEntity(prev => {
+          if (!prev) return sensors[0] ?? null
+          return sensors.find(s => s.entity_id === prev.entity_id) ?? sensors[0] ?? null
+        })
       })
       .catch(console.error)
   }, [selectedHome])
@@ -82,6 +93,8 @@ export default function Statistics() {
       .catch(() => setLoadingOverview(false))
   }, [selectedHome, selectedEntity, period])
 
+  const activePeriod = PERIODS.find(p => p.key === period)
+  const fromDate = new Date(Date.now() - activePeriod.days * 86400 * 1000).toISOString()
   const unit = selectedEntity?.unit || ''
 
   return (
@@ -132,24 +145,46 @@ export default function Statistics() {
 
           {/* Card 1 — Overview */}
           <div className="stats-section-card">
-            <h2 className="stats-section-title">Overview</h2>
-            <p className="stats-section-subtitle">
-              Summary for <strong>{selectedEntity.deviceName} — {selectedEntity.label}</strong> over the last {PERIODS.find(p => p.key === period)?.label.toLowerCase()}
-            </p>
+            <div className="stats-section-header">
+              <div>
+                <h2 className="stats-section-title">
+                  Overview
+                  <InfoTooltip>
+                    Calculated directly from raw sensor readings stored in the database.
+                    All values are computed over the last {activePeriod.label.toLowerCase()} of data
+                    for <em>{selectedEntity.deviceName} — {selectedEntity.label}</em>.
+                  </InfoTooltip>
+                </h2>
+                <p className="stats-section-subtitle">
+                  Summary for <strong>{selectedEntity.deviceName} — {selectedEntity.label}</strong> — last {activePeriod.label.toLowerCase()}
+                </p>
+              </div>
+            </div>
             {loadingOverview ? (
               <p className="stats-loading">Loading...</p>
             ) : overview ? (
               <div className="stat-cards-grid">
-                <StatCard label="Average"  value={overview.avg_value} unit={unit} />
-                <StatCard label="Minimum"  value={overview.min_value} unit={unit} />
-                <StatCard label="Maximum"  value={overview.max_value} unit={unit} />
                 <StatCard
-                  label="Readings"
-                  value={overview.count}
-                  unit=""
+                  label="Average" value={overview.avg_value} unit={unit}
+                  sub={overview.count ? `Mean of ${Number(overview.count).toLocaleString()} readings` : null}
+                  tooltip={`Arithmetic mean of all ${Number(overview.count).toLocaleString()} raw readings over the last ${activePeriod.label.toLowerCase()}.`}
+                />
+                <StatCard
+                  label="Minimum" value={overview.min_value} unit={unit}
+                  sub="Lowest single reading"
+                  tooltip={`The single lowest value recorded among all readings in the last ${activePeriod.label.toLowerCase()}.`}
+                />
+                <StatCard
+                  label="Maximum" value={overview.max_value} unit={unit}
+                  sub="Highest single reading"
+                  tooltip={`The single highest value recorded among all readings in the last ${activePeriod.label.toLowerCase()}.`}
+                />
+                <StatCard
+                  label="Readings" value={overview.count} unit=""
                   sub={overview.first_recorded
                     ? `${new Date(overview.first_recorded).toLocaleDateString()} – ${new Date(overview.last_recorded).toLocaleDateString()}`
                     : null}
+                  tooltip={`Total number of individual data points recorded in the last ${activePeriod.label.toLowerCase()}.`}
                 />
               </div>
             ) : (
@@ -159,44 +194,75 @@ export default function Statistics() {
 
           {/* Card 2 — Daily Pattern */}
           <div className="stats-section-card">
-            <h2 className="stats-section-title">Daily Pattern</h2>
+            <h2 className="stats-section-title">
+              Daily Pattern
+              <InfoTooltip>
+                Each hour shows two bars: <strong style={{color:'var(--accent)'}}>blue</strong> for weekday (Mon–Fri)
+                and <strong style={{color:'#f59e0b'}}>amber</strong> for weekend (Sat–Sun) averages, computed
+                across all {activePeriod.days} days in the selected period. For example, the bars at 08:00
+                are the mean of every reading taken between 08:00–08:59 on weekdays vs weekends.
+                Shaded background = night hours (22:00–06:00). Below the chart: day vs night averages
+                and weekday vs weekend averages, each with the percentage difference.
+                Hours are shown in your local timezone.
+              </InfoTooltip>
+            </h2>
             <p className="stats-section-subtitle">
-              Average value by hour of day for <strong>{selectedEntity.deviceName} — {selectedEntity.label}</strong> — reveals daily usage peaks
+              Hourly averages for <strong>{selectedEntity.deviceName} — {selectedEntity.label}</strong> across
+              all {activePeriod.days} days — weekday vs weekend, day vs night patterns
             </p>
             <HourlyProfileChart
               homeId={selectedHome.id}
               entityId={selectedEntity.entity_id}
               unit={unit}
-              from={new Date(Date.now() - PERIODS.find(p => p.key === period).days * 86400 * 1000).toISOString()}
+              from={fromDate}
             />
           </div>
 
           {/* Card 3 — Trend */}
           <div className="stats-section-card">
-            <h2 className="stats-section-title">Trend</h2>
+            <h2 className="stats-section-title">
+              Trend
+              <InfoTooltip>
+                Shows pre-computed {activePeriod.aggLabel}-by-{activePeriod.aggLabel} aggregations
+                calculated by the analytics service every hour. The <strong>line</strong> is
+                the average value per {activePeriod.aggLabel}. The <strong>shaded band</strong> shows
+                the range between the minimum and maximum recorded in that {activePeriod.aggLabel} —
+                a wider band means more variability.
+              </InfoTooltip>
+            </h2>
             <p className="stats-section-subtitle">
-              Aggregated <strong>{PERIODS.find(p => p.key === period)?.aggPeriod}-by-{PERIODS.find(p => p.key === period)?.aggPeriod}</strong> averages with min/max range
+              {activePeriod.aggLabel.charAt(0).toUpperCase() + activePeriod.aggLabel.slice(1)}-by-{activePeriod.aggLabel} averages
+              for <strong>{selectedEntity.deviceName} — {selectedEntity.label}</strong> over the last {activePeriod.label.toLowerCase()}
             </p>
             <TrendChart
               homeId={selectedHome.id}
               entityId={selectedEntity.entity_id}
               unit={unit}
-              aggPeriod={PERIODS.find(p => p.key === period)?.aggPeriod}
-              from={new Date(Date.now() - PERIODS.find(p => p.key === period).days * 86400 * 1000).toISOString()}
+              aggPeriod={activePeriod.aggPeriod}
+              from={fromDate}
             />
+            <TrendLegend />
           </div>
 
           {/* Card 4 — Heatmap */}
           <div className="stats-section-card">
-            <h2 className="stats-section-title">Weekly Heatmap</h2>
+            <h2 className="stats-section-title">
+              Weekly Heatmap
+              <InfoTooltip>
+                Each cell shows the average value for a specific hour of the day (columns)
+                and day of the week (rows), computed from all readings in the last {activePeriod.label.toLowerCase()}.
+                Darker blue = higher average value. The color scale at the bottom shows
+                the range from minimum (left) to maximum (right). Hover any cell for the exact value and sample count.
+              </InfoTooltip>
+            </h2>
             <p className="stats-section-subtitle">
-              Average value by hour of day and day of week — darker = higher value
+              Average <strong>{selectedEntity.label}</strong> per hour × day of week — darker = higher — hover a cell for details
             </p>
             <HeatmapChart
               homeId={selectedHome.id}
               entityId={selectedEntity.entity_id}
               unit={unit}
-              from={new Date(Date.now() - PERIODS.find(p => p.key === period).days * 86400 * 1000).toISOString()}
+              from={fromDate}
             />
           </div>
 

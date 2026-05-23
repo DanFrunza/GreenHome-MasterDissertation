@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import '../styles/Automations.css'
 import { API_URL } from '../config'
 import { useHome } from '../context/HomeContext'
+import { usePolling } from '../hooks/usePolling'
 
 function formatTrigger(t) {
   const entity = t.entity_id?.split('.')[1] || t.entity_id || ''
@@ -77,18 +78,16 @@ export default function Automations() {
   const [error, setError] = useState(null)
   const [toggling, setToggling] = useState({})
 
-  useEffect(() => { fetchAutomations() }, [selectedHome])
-
   async function fetchAutomations() {
     if (!selectedHome) return
     try {
-      setLoading(true)
       const res = await fetch(`${API_URL}/homes/${selectedHome.id}/automations`)
       const data = await res.json()
-      setAutomations(data.filter(a =>
-        a.triggers?.length > 0 &&
-        !a.actions?.some(ac => ac.service === 'mqtt.publish')
-      ))
+      setAutomations(
+        data
+          .filter(a => a.triggers?.length > 0 && !a.actions?.some(ac => ac.service === 'mqtt.publish'))
+          .sort((a, b) => (a.alias || '').localeCompare(b.alias || ''))
+      )
       setError(null)
     } catch (err) {
       console.error('Error fetching automations:', err)
@@ -97,6 +96,12 @@ export default function Automations() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (selectedHome) setLoading(true)
+  }, [selectedHome])
+
+  usePolling(selectedHome ? fetchAutomations : null, 15000, [selectedHome])
 
   async function handleToggle(automationId, currentEnabled) {
     const action = currentEnabled ? 'disable' : 'enable'
@@ -125,8 +130,8 @@ export default function Automations() {
     }
   }
 
-  if (loading) return <div className="content-padding"><p>Loading...</p></div>
-  if (error) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
+  if (loading && !automations.length) return <div className="content-padding"><p>Loading...</p></div>
+  if (error && !automations.length) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
 
   return (
     <div className="content-padding">

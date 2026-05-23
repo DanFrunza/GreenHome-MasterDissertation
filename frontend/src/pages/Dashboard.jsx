@@ -3,6 +3,7 @@ import '../styles/Dashboard.css'
 import { API_URL } from '../config'
 import { useHome } from '../context/HomeContext'
 import DeviceCard from '../components/DeviceCard'
+import { usePolling } from '../hooks/usePolling'
 
 export default function Dashboard() {
   const { selectedHome } = useHome()
@@ -10,18 +11,23 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const fetchDevices = () => {
     if (!selectedHome) return
-    setLoading(true)
     fetch(`${API_URL}/homes/${selectedHome.id}/devices`)
       .then(r => r.json())
-      .then(data => { setDevices(data); setError(null) })
+      .then(data => { setDevices(data.sort((a, b) => a.device_id.localeCompare(b.device_id))); setError(null) })
       .catch(() => setError('Failed to load devices'))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (selectedHome) setLoading(true)
   }, [selectedHome])
 
-  if (loading) return <div className="content-padding"><p>Loading...</p></div>
-  if (error) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
+  usePolling(selectedHome ? fetchDevices : null, 15000, [selectedHome])
+
+  if (loading && !devices.length) return <div className="content-padding"><p>Loading...</p></div>
+  if (error && !devices.length) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
 
   return (
     <div className="content-padding">

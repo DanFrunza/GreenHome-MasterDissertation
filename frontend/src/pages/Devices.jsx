@@ -2,26 +2,8 @@ import { useEffect, useState } from 'react'
 import '../styles/Devices.css'
 import { API_URL } from '../config'
 import { useHome } from '../context/HomeContext'
-
-function shortLabel(friendlyName, deviceName) {
-  const stripped = friendlyName?.startsWith(deviceName)
-    ? friendlyName.slice(deviceName.length).trim()
-    : friendlyName
-  return stripped || friendlyName
-}
-
-function inferDeviceName(entities) {
-  if (!entities?.length) return 'Unknown Device'
-  if (entities.length === 1) return entities[0].friendly_name || 'Unknown Device'
-  const words = entities.map(e => (e.friendly_name || '').split(' '))
-  let prefix = words[0]
-  for (let i = 1; i < words.length; i++) {
-    let j = 0
-    while (j < prefix.length && j < words[i].length && prefix[j] === words[i][j]) j++
-    prefix = prefix.slice(0, j)
-  }
-  return prefix.join(' ') || entities[0].friendly_name || 'Unknown Device'
-}
+import { usePolling } from '../hooks/usePolling'
+import { inferDeviceName, shortLabel } from '../utils/deviceUtils'
 
 export default function Devices() {
   const { selectedHome } = useHome()
@@ -34,10 +16,9 @@ export default function Devices() {
   const fetchDevices = async () => {
     if (!selectedHome) return
     try {
-      setLoading(true)
       const res = await fetch(`${API_URL}/homes/${selectedHome.id}/devices`)
       const data = await res.json()
-      setDevices(data)
+      setDevices(data.sort((a, b) => a.device_id.localeCompare(b.device_id)))
 
       const states = {}
       data.forEach(device => {
@@ -56,8 +37,10 @@ export default function Devices() {
   }
 
   useEffect(() => {
-    fetchDevices()
+    if (selectedHome) setLoading(true)
   }, [selectedHome])
+
+  usePolling(selectedHome ? fetchDevices : null, 15000, [selectedHome])
 
   const handleRefresh = async () => {
     try {
@@ -87,8 +70,8 @@ export default function Devices() {
     }
   }
 
-  if (loading) return <div className="content-padding"><p>Loading...</p></div>
-  if (error) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
+  if (loading && !devices.length) return <div className="content-padding"><p>Loading...</p></div>
+  if (error && !devices.length) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
 
   return (
     <div className="content-padding">

@@ -1,20 +1,21 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../db');
+const express = require('express')
+const router = express.Router()
+const pool = require('../db')
 
-// GET /users/:user_id/homes
-router.get('/:user_id/homes', async (req, res) => {
+// GET /users/me/homes — homes the authenticated user has access to
+router.get('/me/homes', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT h.*, uh.role
+            SELECT h.id, h.name, h.status, h.last_seen, h.created_at, uh.role
             FROM homes h
             JOIN user_homes uh ON h.id = uh.home_id
             WHERE uh.user_id = $1
-        `, [req.params.user_id]);
-        res.json(result.rows);
+            ORDER BY uh.joined_at ASC
+        `, [req.user.id])
+        res.json(result.rows)
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message })
     }
-});
+})
 
-module.exports = router;
+module.exports = router

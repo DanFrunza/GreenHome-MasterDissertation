@@ -1,0 +1,48 @@
+.no-home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-home-icon {
+  width: 52px;
+  height: 52px;
+  color: var(--muted-foreground);
+  margin-bottom: 1.25rem;
+  opacity: 0.5;
+}
+
+.no-home-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.no-home-desc {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  line-height: 1.55;
+}
+
+.no-home-btn {
+  display: inline-block;
+  padding: 0.55rem 1.4rem;
+  background-color: var(--accent);
+  color: white;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.no-home-btn:hover {
+  opacity: 0.88;
+}

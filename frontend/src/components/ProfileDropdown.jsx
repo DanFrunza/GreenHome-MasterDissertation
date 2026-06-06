@@ -1,42 +1,52 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useUser } from '../context/UserContext'
+import { useClickOutside } from '../hooks/useClickOutside'
 
 export default function ProfileDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const { user, logout } = useUser()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
+  useClickOutside(ref, () => setOpen(false))
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  if (!user) return null
+
+  const displayName = user.display_name || user.username || user.email
+  const initials    = displayName.slice(0, 2).toUpperCase()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
-    <div className="navbar-profile" ref={dropdownRef}>
-      <button 
-        className={`profile-button ${isOpen ? 'open' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+    <div className="navbar-profile" ref={ref}>
+      <button
+        className={`profile-button ${open ? 'open' : ''}`}
+        onClick={() => setOpen(prev => !prev)}
       >
-        <span className="profile-icon">👤</span>
-        <span>Profile</span>
+        <span className="profile-avatar">{initials}</span>
+        <span className="profile-name">{displayName}</span>
       </button>
-      
-      <div className={`dropdown-menu ${isOpen ? '' : 'hidden'}`}>
-        <Link to="/login" className="dropdown-link" onClick={() => setIsOpen(false)}>
-          🔑 Login
-        </Link>
-        <Link to="/register" className="dropdown-link" onClick={() => setIsOpen(false)}>
-          ✍️ Register
-        </Link>
-        <Link to="/profile" className="dropdown-link" onClick={() => setIsOpen(false)}>
-          ⚙️ Settings
-        </Link>
-      </div>
+
+      {open && (
+        <div className="dropdown-menu">
+          <div className="dropdown-user-info">
+            <span className="dropdown-user-name">{displayName}</span>
+            <span className="dropdown-user-email">@{user.username} · {user.email}</span>
+          </div>
+          <div className="dropdown-divider" />
+          <Link to="/settings" className="dropdown-link" onClick={() => setOpen(false)}>
+            Settings
+          </Link>
+          <div className="dropdown-divider" />
+          <button className="dropdown-link dropdown-logout" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
+      )}
     </div>
-  );
+  )
 }

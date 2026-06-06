@@ -1,87 +1,74 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import ProfileDropdown from './ProfileDropdown'
 import { useHome } from '../context/HomeContext'
+import { useClickOutside } from '../hooks/useClickOutside'
 import '../styles/Navbar.css'
+
+const NAV_ITEMS = [
+  { path: '/',            label: 'Home'        },
+  { path: '/dashboard',   label: 'Dashboard'   },
+  { path: '/devices',     label: 'Devices'     },
+  { path: '/automations', label: 'Automations' },
+  { path: '/statistics',  label: 'Statistics'  },
+  { path: '/diagnostics', label: 'Diagnostics' },
+  { path: '/roi',         label: 'ROI'         },
+]
+
+const statusColor = (home) =>
+  home?.status === 'online' ? 'var(--status-online)' : 'var(--status-offline)'
 
 export default function Navbar() {
   const location = useLocation()
   const { homes, selectedHome, setSelectedHome } = useHome()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef(null)
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
 
-  const navItems = [
-    { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/devices', label: 'Devices', icon: '🔌' },
-    { path: '/automations', label: 'Automations', icon: '⚙️' },
-    { path: '/statistics',  label: 'Statistics',  icon: '📈' },
-  ]
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
-        setDropdownOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const handleSelect = (home) => {
-    setSelectedHome(home)
-    setDropdownOpen(false)
-  }
-
-  const isOnline = (h) => h.status === 'online'
+  useClickOutside(ref, () => setOpen(false))
 
   return (
     <nav className="navbar">
       <Link to="/" className="navbar-logo">
-        <span className="navbar-logo-icon">⚡</span>
-        <span>HEMS Demo</span>
+        <svg className="navbar-logo-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
+          <path d="M13 2L4.5 13.5H11L10 22L20.5 10H14L13 2Z" />
+        </svg>
+        <span>GreenNest</span>
       </Link>
 
       <div className="navbar-links">
-        {navItems.map(item => (
+        {NAV_ITEMS.map(({ path, label }) => (
           <Link
-            key={item.path}
-            to={item.path}
-            className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+            key={path}
+            to={path}
+            className={`nav-link ${location.pathname === path ? 'active' : ''}`}
           >
-            <span className="nav-link-icon">{item.icon}</span>
-            <span>{item.label}</span>
+            {label}
           </Link>
         ))}
       </div>
 
       {homes.length > 0 && (
-        <div className="home-selector" ref={dropdownRef}>
+        <div className="home-selector" ref={ref}>
           <button
-            className={`home-selector-btn ${dropdownOpen ? 'open' : ''}`}
-            onClick={() => setDropdownOpen(prev => !prev)}
+            className={`home-selector-btn ${open ? 'open' : ''}`}
+            onClick={() => setOpen(prev => !prev)}
           >
-            <span
-              className="home-selector-dot"
-              style={{ backgroundColor: isOnline(selectedHome) ? 'var(--status-online)' : 'var(--status-offline)' }}
-            />
+            <span className="home-selector-dot" style={{ backgroundColor: statusColor(selectedHome) }} />
             <span className="home-selector-name">{selectedHome?.name || selectedHome?.id}</span>
           </button>
 
-          {dropdownOpen && (
+          {open && (
             <div className="home-selector-dropdown">
               {homes.map(h => (
                 <button
                   key={h.id}
                   className={`home-selector-option ${selectedHome?.id === h.id ? 'active' : ''}`}
-                  onClick={() => handleSelect(h)}
+                  onClick={() => { setSelectedHome(h); setOpen(false) }}
                 >
-                  <span
-                    className="home-selector-dot"
-                    style={{ backgroundColor: isOnline(h) ? 'var(--status-online)' : 'var(--status-offline)' }}
-                  />
+                  <span className="home-selector-dot" style={{ backgroundColor: statusColor(h) }} />
                   <div className="home-option-text">
                     <span className="home-option-name">{h.name || h.id}</span>
-                    <span className="home-option-status">{isOnline(h) ? 'Online' : 'Offline'}</span>
+                    <span className="home-option-status">{h.status === 'online' ? 'Online' : 'Offline'}</span>
                   </div>
                   {selectedHome?.id === h.id && <span className="home-option-check">✓</span>}
                 </button>

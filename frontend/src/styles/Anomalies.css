@@ -1,0 +1,306 @@
+/* Shared anomaly elements — badge, severity dot, row list */
+
+.anomaly-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.anomaly-badge.critical {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.anomaly-badge.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.anomaly-severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.anomaly-severity-dot.critical { background: #ef4444; }
+.anomaly-severity-dot.warning  { background: #f59e0b; }
+
+.anomalies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.anomaly-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.anomaly-row:last-child {
+  border-bottom: none;
+}
+
+.anomaly-row-link {
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background 0.15s;
+}
+
+.anomaly-row-link:hover {
+  background: var(--muted);
+}
+
+.anomaly-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.anomaly-entity-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anomaly-row-value {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.anomaly-row-baseline {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+.anomaly-row-time {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Home page — anomalies card */
+.anomalies-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.anomalies-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.anomalies-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.anomalies-summary-badges {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.anomalies-card-desc {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.anomalies-more {
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+}
+
+/* Statistics page — anomaly section header */
+.anomaly-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.anomaly-summary-text {
+  font-size: 0.82rem;
+  color: var(--muted-foreground);
+}
+
+/* Day-grouped anomaly sections */
+.anomaly-day-groups {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.anomaly-day-group + .anomaly-day-group {
+  border-top: 1px solid var(--border);
+}
+
+.anomaly-day-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--card);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--foreground);
+  transition: background 0.15s;
+}
+
+.anomaly-day-header:hover {
+  background: var(--muted);
+}
+
+.anomaly-day-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 75px;
+}
+
+.anomaly-day-badges {
+  display: flex;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.anomaly-day-chevron {
+  font-size: 0.6rem;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.anomaly-day-content {
+  border-top: 1px solid var(--border);
+  padding: 0.5rem;
+  background: var(--card);
+}
+
+/* ── Dismiss controls ────────────────────────────────────────────────────── */
+
+.anomaly-dismiss-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  padding: 0.1rem 0.3rem;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0;
+  flex-shrink: 0;
+  border-radius: 3px;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.anomaly-row:hover .anomaly-dismiss-btn {
+  opacity: 0.5;
+}
+
+.anomaly-dismiss-btn:hover {
+  opacity: 1 !important;
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.anomaly-group-dismiss {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.anomaly-day-header:hover .anomaly-group-dismiss {
+  opacity: 0.7;
+}
+
+.anomaly-group-dismiss:hover {
+  opacity: 1 !important;
+  color: var(--foreground);
+  border-color: var(--foreground);
+}
+
+/* Dismissed row — visible only when show-dismissed is active */
+.anomaly-row.is-dismissed {
+  opacity: 0.45;
+}
+
+.anomaly-row.is-dismissed:hover {
+  opacity: 0.7;
+}
+
+.anomaly-restore-btn {
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.anomaly-restore-btn:hover {
+  color: var(--foreground);
+  border-color: var(--foreground);
+}
+
+/* Toggle button for "Show dismissed" */
+.anomaly-toggle-dismissed {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.anomaly-toggle-dismissed:hover,
+.anomaly-toggle-dismissed.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}

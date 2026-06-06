@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { API_URL } from '../config'
+import { apiFetch } from '../utils/api'
+import { HOUR_LABELS } from '../utils/chartUtils'
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => {
-  if (i === 0) return '12am'
-  if (i === 12) return '12pm'
-  return i < 12 ? `${i}am` : `${i - 12}pm`
-})
 
-export default function HeatmapChart({ homeId, entityId, unit, from }) {
+export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass }) {
   const svgRef    = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -21,13 +18,50 @@ export default function HeatmapChart({ homeId, entityId, unit, from }) {
     if (!homeId || !entityId) return
     setLoading(true)
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    if (deviceClass === 'energy') {
+      const params = new URLSearchParams({ period: 'hour' })
+      if (from) params.set('from', from)
+      apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
+        .then(r => r.json())
+        .then(rows => {
+          const grid = {}
+          rows.forEach(r => {
+            const delta = Math.max(0, parseFloat(r.max_value) - parseFloat(r.min_value))
+            if (isNaN(delta) || !isFinite(delta)) return
+            const parts = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz, year: 'numeric', month: 'numeric',
+              day: 'numeric', hour: 'numeric', hour12: false,
+            }).formatToParts(new Date(r.period_start))
+            const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0')
+            const hour = get('hour') % 24
+            const dow  = new Date(get('year'), get('month') - 1, get('day')).getDay()
+            const key  = `${dow}_${hour}`
+            if (!grid[key]) grid[key] = { sum: 0, count: 0 }
+            grid[key].sum += delta
+            grid[key].count++
+          })
+          const cells = []
+          for (let dow = 0; dow < 7; dow++) {
+            for (let hour = 0; hour < 24; hour++) {
+              const cell = grid[`${dow}_${hour}`]
+              cells.push({ dow, hour, avg_value: cell ? cell.sum / cell.count : null, count: cell?.count ?? 0 })
+            }
+          }
+          setData(cells)
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+
     const params = new URLSearchParams({ tz })
     if (from) params.set('from', from)
-    fetch(`${API_URL}/homes/${homeId}/entities/${entityId}/heatmap?${params}`)
+    apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/heatmap?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, from])
+  }, [homeId, entityId, from, deviceClass])
 
   useEffect(() => {
     if (!data.length || !svgRef.current || !containerRef.current) return
@@ -62,7 +96,6 @@ export default function HeatmapChart({ homeId, entityId, unit, from }) {
       .attr('height', cellH - 2)
       .attr('rx', 3)
       .attr('fill', d => d.avg_value != null ? colorScale(d.avg_value) : 'var(--muted)')
-      .style('cursor', d => d.avg_value != null ? 'default' : 'default')
       .on('mouseenter', function (event, d) {
         if (d.avg_value == null) return
         const box = wrapperRef.current.getBoundingClientRect()
@@ -103,14 +136,15 @@ export default function HeatmapChart({ homeId, entityId, unit, from }) {
     const legendH = 8
     const legendY = margin.top + cellH * 7 + 28
 
-    const grad = svg.append('defs').append('linearGradient').attr('id', 'hm-grad')
+    const gradId = `hm-grad-${entityId}`
+    const grad = svg.append('defs').append('linearGradient').attr('id', gradId)
     grad.append('stop').attr('offset', '0%').attr('stop-color', colorScale(minVal))
     grad.append('stop').attr('offset', '100%').attr('stop-color', colorScale(maxVal))
 
     svg.append('rect')
       .attr('x', margin.left).attr('y', legendY)
       .attr('width', legendW).attr('height', legendH)
-      .attr('rx', 3).attr('fill', 'url(#hm-grad)')
+      .attr('rx', 3).attr('fill', `url(#${gradId})`)
 
     const fmt = v => `${d3.format('.2~f')(v)}${unit ? ` ${unit}` : ''}`
     svg.append('text')

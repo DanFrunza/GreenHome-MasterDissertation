@@ -1,18 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import '../styles/Automations.css'
 import { API_URL } from '../config'
+import { apiFetch } from '../utils/api'
 import { useHome } from '../context/HomeContext'
+import NoHomeSelected from '../components/NoHomeSelected'
 import { usePolling } from '../hooks/usePolling'
 
 function formatTrigger(t) {
   const entity = t.entity_id?.split('.')[1] || t.entity_id || ''
   if (t.trigger_type === 'numeric_state') {
-    const condition = t.above != null ? `above ${t.above}` : t.below != null ? `below ${t.below}` : ''
-    return { type: 'Numeric State', entity, detail: condition }
+    const detail = t.above != null ? `above ${t.above}` : t.below != null ? `below ${t.below}` : ''
+    return { type: 'Numeric State', entity, detail }
   }
   if (t.trigger_type === 'state') {
     const detail = t.from_state && t.to_state ? `${t.from_state} → ${t.to_state}` : t.to_state || ''
     return { type: 'State Change', entity, detail }
+  }
+  if (t.trigger_type === 'time') {
+    return { type: 'Time', entity: '', detail: t.at_time || '' }
   }
   if (t.trigger_type === 'event') {
     return { type: 'Event', entity: '', detail: t.event_type || 'state_changed' }
@@ -43,9 +48,9 @@ function formatAction(a) {
   const entity = a.entity_id?.split('.')[1] || a.entity_id || ''
   if (a.service) {
     const parts = a.service.split('.')
-    const svc = parts[1]?.replace(/_/g, ' ') || a.service
+    const svc   = parts[1]?.replace(/_/g, ' ') || a.service
     const label = svc.charAt(0).toUpperCase() + svc.slice(1)
-    return { type: label, entity, detail: a.service.split('.')[0] }
+    return { type: label, entity, detail: parts[0] }
   }
   if (a.action_type === 'delay') return { type: 'Delay', entity: '', detail: a.delay || '' }
   return { type: a.action_type || 'Action', entity, detail: '' }
@@ -74,14 +79,14 @@ function PipelineArrow() {
 export default function Automations() {
   const { selectedHome } = useHome()
   const [automations, setAutomations] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [toggling, setToggling] = useState({})
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [toggling, setToggling]       = useState({})
 
-  async function fetchAutomations() {
+  const fetchAutomations = useCallback(async () => {
     if (!selectedHome) return
     try {
-      const res = await fetch(`${API_URL}/homes/${selectedHome.id}/automations`)
+      const res  = await apiFetch(`${API_URL}/homes/${selectedHome.id}/automations`)
       const data = await res.json()
       setAutomations(
         data
@@ -89,13 +94,12 @@ export default function Automations() {
           .sort((a, b) => (a.alias || '').localeCompare(b.alias || ''))
       )
       setError(null)
-    } catch (err) {
-      console.error('Error fetching automations:', err)
+    } catch {
       setError('Failed to load automations')
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedHome])
 
   useEffect(() => {
     if (selectedHome) setLoading(true)
@@ -103,35 +107,33 @@ export default function Automations() {
 
   usePolling(selectedHome ? fetchAutomations : null, 15000, [selectedHome])
 
-  async function handleToggle(automationId, currentEnabled) {
+  const handleToggle = async (automationId, currentEnabled) => {
     const action = currentEnabled ? 'disable' : 'enable'
     setToggling(prev => ({ ...prev, [automationId]: true }))
     setAutomations(prev =>
       prev.map(a => a.automation_id === automationId ? { ...a, enabled: !currentEnabled } : a)
     )
     try {
-      await fetch(`${API_URL}/homes/${selectedHome.id}/automations/${automationId}/${action}`, { method: 'POST' })
-    } catch (err) {
+      await apiFetch(`${API_URL}/homes/${selectedHome.id}/automations/${automationId}/${action}`, { method: 'POST' })
+    } catch {
       setAutomations(prev =>
         prev.map(a => a.automation_id === automationId ? { ...a, enabled: currentEnabled } : a)
       )
-      console.error('Toggle failed:', err)
     } finally {
       setToggling(prev => ({ ...prev, [automationId]: false }))
     }
   }
 
-  async function handleRefresh() {
+  const handleRefresh = async () => {
     try {
-      await fetch(`${API_URL}/homes/${selectedHome.id}/automations/refresh`, { method: 'POST' })
+      await apiFetch(`${API_URL}/homes/${selectedHome.id}/automations/refresh`, { method: 'POST' })
       setTimeout(fetchAutomations, 2000)
-    } catch (err) {
-      console.error('Refresh failed:', err)
-    }
+    } catch { /* silent */ }
   }
 
+    if (!selectedHome) return <NoHomeSelected />
   if (loading && !automations.length) return <div className="content-padding"><p>Loading...</p></div>
-  if (error && !automations.length) return <div className="content-padding"><p style={{ color: 'red' }}>{error}</p></div>
+  if (error   && !automations.length) return <div className="content-padding"><p className="automations-error">{error}</p></div>
 
   return (
     <div className="content-padding">
@@ -147,16 +149,15 @@ export default function Automations() {
 
       <div className="automations-list">
         {automations.map(auto => {
-          const hasConditions = auto.conditions?.length > 0
-          const trigger = auto.triggers?.[0]
+          const trigger   = auto.triggers?.[0]
           const condition = auto.conditions?.[0]
-          const action = auto.actions?.[0]
+          const action    = auto.actions?.[0]
 
           return (
             <div key={auto.automation_id} className={`automation-card ${auto.enabled ? 'enabled' : 'disabled'}`}>
               <div className="automation-card-header">
                 <div className="automation-title-row">
-                  <span className={`automation-status-dot ${auto.enabled ? 'on' : 'off'}`}></span>
+                  <span className={`automation-status-dot ${auto.enabled ? 'on' : 'off'}`} />
                   <h2 className="automation-name">{auto.alias}</h2>
                 </div>
                 <label className={`toggle-switch ${toggling[auto.automation_id] ? 'toggle-loading' : ''}`}>
@@ -166,22 +167,18 @@ export default function Automations() {
                     onChange={() => handleToggle(auto.automation_id, auto.enabled)}
                     disabled={toggling[auto.automation_id]}
                   />
-                  <span className="toggle-slider"></span>
+                  <span className="toggle-slider" />
                 </label>
               </div>
 
               <div className="automation-pipeline">
-                {trigger && (
-                  <PipelineStep label="WHEN" icon="⚡" content={formatTrigger(trigger)} />
-                )}
-
-                {hasConditions && condition && (
+                {trigger && <PipelineStep label="WHEN" icon="●" content={formatTrigger(trigger)} />}
+                {auto.conditions?.length > 0 && condition && (
                   <>
                     <PipelineArrow />
                     <PipelineStep label="IF" icon="◆" content={formatCondition(condition)} />
                   </>
                 )}
-
                 {action && (
                   <>
                     <PipelineArrow />

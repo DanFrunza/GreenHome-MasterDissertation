@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { API_URL } from '../config'
+import { apiFetch } from '../utils/api'
+import { getThresholds } from '../utils/thresholds'
+import { HOUR_LABELS } from '../utils/chartUtils'
 
-const HOUR_LABELS = [
-  '12am','1am','2am','3am','4am','5am','6am','7am',
-  '8am','9am','10am','11am','12pm','1pm','2pm','3pm',
-  '4pm','5pm','6pm','7pm','8pm','9pm','10pm','11pm',
-]
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
 
 const NIGHT_HOURS = new Set([0,1,2,3,4,5,22,23])
 const isNight = h => NIGHT_HOURS.has(h)
@@ -14,7 +13,7 @@ const isNight = h => NIGHT_HOURS.has(h)
 const COLOR_WEEKDAY = 'var(--accent)'
 const COLOR_WEEKEND = '#f59e0b'
 
-export default function HourlyProfileChart({ homeId, entityId, unit, from }) {
+export default function HourlyProfileChart({ homeId, entityId, unit, from, deviceClass }) {
   const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -27,14 +26,49 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from }) {
   useEffect(() => {
     if (!homeId || !entityId) return
     setLoading(true)
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const params = new URLSearchParams({ tz })
+
+    if (deviceClass === 'energy') {
+      const params = new URLSearchParams({ period: 'hour' })
+      if (from) params.set('from', from)
+      apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
+        .then(r => r.json())
+        .then(rows => {
+          const groups = {}
+          rows.forEach(r => {
+            const delta = Math.max(0, parseFloat(r.max_value) - parseFloat(r.min_value))
+            if (isNaN(delta) || !isFinite(delta)) return
+            const parts = new Intl.DateTimeFormat('en-US', {
+              timeZone: TZ, year: 'numeric', month: 'numeric',
+              day: 'numeric', hour: 'numeric', hour12: false,
+            }).formatToParts(new Date(r.period_start))
+            const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0')
+            const hour = get('hour') % 24
+            const dow  = new Date(get('year'), get('month') - 1, get('day')).getDay()
+            const type = (dow === 0 || dow === 6) ? 'weekend' : 'weekday'
+            if (!groups[hour]) groups[hour] = { weekday: { sum: 0, count: 0 }, weekend: { sum: 0, count: 0 } }
+            groups[hour][type].sum += delta
+            groups[hour][type].count++
+          })
+          setData(Array.from({ length: 24 }, (_, h) => ({
+            hour: h,
+            weekday_avg:   groups[h]?.weekday.count ? groups[h].weekday.sum / groups[h].weekday.count : null,
+            weekday_count: groups[h]?.weekday.count ?? 0,
+            weekend_avg:   groups[h]?.weekend.count ? groups[h].weekend.sum / groups[h].weekend.count : null,
+            weekend_count: groups[h]?.weekend.count ?? 0,
+          })))
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+
+    const params = new URLSearchParams({ TZ })
     if (from) params.set('from', from)
-    fetch(`${API_URL}/homes/${homeId}/entities/${entityId}/hourly-profile-split?${params}`)
+    apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/hourly-profile-split?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, from])
+  }, [homeId, entityId, from, deviceClass])
 
   useEffect(() => {
     if (!data.length || !svgRef.current || !containerRef.current) return
@@ -109,6 +143,26 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from }) {
       .attr('y1', d => yScale(d)).attr('y2', d => yScale(d))
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
+    // Reference threshold lines
+    const thr = getThresholds(deviceClass)
+    if (thr) {
+      const [yDomMin, yDomMax] = yScale.domain()
+      thr.lines.forEach(line => {
+        if (line.value < yDomMin || line.value > yDomMax) return
+        const y = yScale(line.value)
+        svg.append('line')
+          .attr('x1', margin.left).attr('x2', width - margin.right)
+          .attr('y1', y).attr('y2', y)
+          .attr('stroke', line.color).attr('stroke-width', 1)
+          .attr('stroke-dasharray', line.dash ? '5 3' : 'none')
+          .attr('opacity', 0.7)
+        svg.append('text')
+          .attr('x', margin.left + 4).attr('y', y - 3)
+          .attr('font-size', '0.62rem').attr('fill', line.color).attr('opacity', 0.9)
+          .text(line.chartLabel)
+      })
+    }
+
     // Grouped bars
     const hourG = svg.append('g')
     data.forEach(d => {
@@ -173,7 +227,7 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from }) {
         .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.72rem')
         .attr('x', -6).attr('text-anchor', 'end'))
 
-  }, [data, unit])
+  }, [data, unit, deviceClass])
 
   if (loading) return <p className="stats-loading">Loading...</p>
   if (!data.some(d => d.weekday_avg != null || d.weekend_avg != null))

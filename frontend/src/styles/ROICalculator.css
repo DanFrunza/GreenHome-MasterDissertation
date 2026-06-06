@@ -1,0 +1,201 @@
+.roi-page {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.roi-title {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.roi-subtitle {
+  margin: 0 0 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.roi-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.roi-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.roi-card-desc {
+  margin: 0;
+  font-size: 0.825rem;
+  color: var(--muted-foreground);
+  line-height: 1.55;
+}
+
+.roi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.roi-select,
+.roi-input {
+  height: 38px;
+  padding: 0 0.75rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.roi-select:focus,
+.roi-input:focus {
+  border-color: var(--accent);
+}
+
+.roi-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.roi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.roi-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.roi-divider::before,
+.roi-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.roi-computed {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  line-height: 1.5;
+}
+
+.roi-accuracy-note {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  border-left: 3px solid var(--border);
+  padding-left: 0.75rem;
+  line-height: 1.55;
+}
+
+.roi-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.roi-results {
+  background-color: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.roi-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.roi-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 1rem;
+  background: var(--muted);
+  border-radius: 0.375rem;
+}
+
+.roi-result-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.roi-result-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.roi-result-value.roi-highlight {
+  color: var(--accent);
+}
+
+.roi-notice {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.roi-missing {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.roi-missing-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.roi-missing-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.825rem;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}

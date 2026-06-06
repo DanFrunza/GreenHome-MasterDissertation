@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      VARCHAR(100) UNIQUE NOT NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255),
+    display_name  VARCHAR(100),
     created_at    TIMESTAMP DEFAULT NOW()
 );
 
@@ -116,8 +117,62 @@ CREATE TABLE IF NOT EXISTS automation_actions (
     FOREIGN KEY (home_id, automation_id) REFERENCES automations(home_id, automation_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS device_metadata (
+    home_id        VARCHAR(50),
+    device_id      VARCHAR(150),
+    appliance_type VARCHAR(50),
+    energy_class   VARCHAR(10),
+    updated_at     TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (home_id, device_id)
+);
+
+CREATE TABLE IF NOT EXISTS home_config (
+    home_id          VARCHAR(50) PRIMARY KEY REFERENCES homes(id) ON DELETE CASCADE,
+    tariff_flat      NUMERIC(8,4),
+    tariff_peak      NUMERIC(8,4),
+    tariff_offpeak   NUMERIC(8,4),
+    tariff_weekend   NUMERIC(8,4),
+    peak_start       TIME,
+    peak_end         TIME,
+    currency         VARCHAR(10) DEFAULT 'RON',
+    updated_at       TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS anomalies (
+    id          SERIAL PRIMARY KEY,
+    home_id     VARCHAR(50)  NOT NULL,
+    entity_id   VARCHAR(150) NOT NULL,
+    detected_at TIMESTAMP    NOT NULL,
+    value       NUMERIC,
+    mean        NUMERIC,
+    std_dev     NUMERIC,
+    z_score     NUMERIC,
+    severity    VARCHAR(20)  NOT NULL,
+    UNIQUE (home_id, entity_id, detected_at)
+);
+CREATE INDEX IF NOT EXISTS anomalies_home_detected ON anomalies (home_id, detected_at DESC);
+CREATE INDEX IF NOT EXISTS anomalies_entity ON anomalies (home_id, entity_id, detected_at DESC);
+
+CREATE TABLE IF NOT EXISTS predictions (
+    id              SERIAL PRIMARY KEY,
+    home_id         VARCHAR(50)  NOT NULL,
+    entity_id       VARCHAR(150) NOT NULL,
+    predicted_at    TIMESTAMP    NOT NULL,
+    target_time     TIMESTAMP    NOT NULL,
+    predicted_value FLOAT,
+    model_type      VARCHAR(30)  NOT NULL,
+    UNIQUE (home_id, entity_id, target_time)
+);
+CREATE INDEX IF NOT EXISTS predictions_home_entity ON predictions (home_id, entity_id, target_time);
+
+CREATE TABLE IF NOT EXISTS home_credentials (
+    home_id            VARCHAR(50) PRIMARY KEY REFERENCES homes(id) ON DELETE CASCADE,
+    mqtt_password_hash VARCHAR(255) NOT NULL,
+    created_at         TIMESTAMP DEFAULT NOW()
+);
+
 INSERT INTO users (username, email, password_hash)
-VALUES ('demo-user', 'demo@greenhome.com', 'demo')
+VALUES ('demo-user', 'demo@greennest.me', 'demo')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO homes (id, name, status) VALUES
@@ -130,4 +185,8 @@ INSERT INTO user_homes (user_id, home_id, role) VALUES
   (1, 'home1', 'owner'),
   (1, 'home2', 'owner'),
   (1, 'home3', 'member')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO home_config (home_id, tariff_flat, tariff_peak, tariff_offpeak, peak_start, peak_end, currency) VALUES
+  ('home1', 0.8700, 1.1000, 0.5500, '07:00', '23:00', 'RON')
 ON CONFLICT DO NOTHING;

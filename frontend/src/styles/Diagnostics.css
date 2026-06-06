@@ -1,0 +1,255 @@
+.diag-page-header {
+  margin-bottom: 2rem;
+}
+
+.diag-title {
+  margin: 0 0 0.25rem;
+  font-size: 2rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.diag-subtitle {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.diag-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.diag-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.diag-card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.diag-card-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.diag-card-desc {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.diag-empty {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin: 0;
+}
+
+.diag-alert-badge {
+  flex-shrink: 0;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  white-space: nowrap;
+}
+
+.diag-fault-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.diag-fault-device {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
+}
+
+.diag-fault-device-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.875rem;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.diag-fault-sensors {
+  display: flex;
+  flex-direction: column;
+}
+
+.diag-fault-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.55rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.diag-fault-row:last-child {
+  border-bottom: none;
+}
+
+.diag-fault-row.triggered {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.diag-fault-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.diag-fault-dot.triggered { background: #ef4444; }
+.diag-fault-dot.ok         { background: var(--status-online); }
+
+.diag-fault-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.diag-fault-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.diag-fault-status.triggered { color: #ef4444; }
+.diag-fault-status.ok         { color: var(--status-online); }
+
+.diag-anomaly-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.diag-health-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.diag-health-device {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
+}
+
+.diag-health-device.has-issues {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.diag-health-device-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.875rem;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.diag-health-device-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.diag-health-type-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.diag-health-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.diag-health-ok-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-online);
+  flex-shrink: 0;
+}
+
+.diag-health-insights {
+  display: flex;
+  flex-direction: column;
+}
+
+.diag-health-insight {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.diag-health-insight:last-child {
+  border-bottom: none;
+}
+
+.diag-health-insight.warning  { background: rgba(245, 158, 11, 0.05); }
+.diag-health-insight.critical { background: rgba(239, 68, 68, 0.05); }
+
+.diag-health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.diag-health-dot.warning  { background: #f59e0b; }
+.diag-health-dot.critical { background: #ef4444; }
+
+.diag-health-insight-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.diag-health-insight-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.diag-health-insight-text {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}

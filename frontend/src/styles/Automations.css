@@ -1,4 +1,3 @@
-/* Automations Page */
 .automations-container {
   padding-top: 2rem;
   padding-bottom: 2rem;
@@ -26,7 +25,11 @@
   font-weight: var(--font-weight-normal);
 }
 
-/* Automations List */
+.automations-error {
+  font-size: 1rem;
+  color: var(--status-offline);
+}
+
 .automations-list {
   display: flex;
   flex-direction: column;
@@ -34,7 +37,6 @@
   padding-bottom: 2rem;
 }
 
-/* Automation Card */
 .automation-card {
   background-color: var(--card);
   border: 1px solid var(--border);
@@ -48,7 +50,6 @@
   opacity: 0.55;
 }
 
-/* Card Header */
 .automation-card-header {
   display: flex;
   justify-content: space-between;
@@ -82,7 +83,6 @@
 .automation-status-dot.on  { background-color: var(--status-online); }
 .automation-status-dot.off { background-color: var(--status-offline); }
 
-/* Pipeline */
 .automation-pipeline {
   display: flex;
   align-items: stretch;
@@ -102,7 +102,6 @@
   padding-top: 1.3rem;
 }
 
-/* Pipeline Step */
 .pipeline-step {
   display: flex;
   flex-direction: column;
@@ -165,7 +164,6 @@
   font-family: monospace;
 }
 
-/* Footer */
 .automation-footer {
   display: flex;
   align-items: center;
@@ -193,52 +191,4 @@
 .footer-separator {
   color: var(--border);
   font-size: 0.85rem;
-}
-
-/* Toggle (shared pattern) */
-.toggle-switch {
-  position: relative;
-  display: inline-flex;
-  width: 50px;
-  height: 26px;
-  cursor: pointer;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #cccccc;
-  border-radius: 13px;
-  transition: 0.3s;
-}
-
-.toggle-slider::before {
-  content: '';
-  position: absolute;
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background-color: var(--accent);
-}
-
-.toggle-switch input:checked + .toggle-slider::before {
-  transform: translateX(24px);
-}
-
-.toggle-loading {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

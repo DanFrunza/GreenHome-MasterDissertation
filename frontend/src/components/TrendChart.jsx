@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { API_URL } from '../config'
+import { apiFetch } from '../utils/api'
+import { getThresholds } from '../utils/thresholds'
 
-export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) {
+export default function TrendChart({ homeId, entityId, unit, aggPeriod, from, deviceClass }) {
   const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -14,7 +16,7 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
     if (!homeId || !entityId) return
     setLoading(true)
     const params = `period=${aggPeriod}${from ? `&from=${from}` : ''}`
-    fetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
+    apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
@@ -23,12 +25,16 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
   useEffect(() => {
     if (!data.length || !svgRef.current || !containerRef.current) return
 
+    const isEnergyDelta = deviceClass === 'energy'
+
     const parsed = data
       .map(d => ({
         date: new Date(d.period_start),
-        avg:  parseFloat(d.avg_value),
-        min:  parseFloat(d.min_value),
-        max:  parseFloat(d.max_value),
+        avg: isEnergyDelta
+          ? Math.max(0, parseFloat(d.max_value) - parseFloat(d.min_value))
+          : parseFloat(d.avg_value),
+        min: isEnergyDelta ? null : parseFloat(d.min_value),
+        max: isEnergyDelta ? null : parseFloat(d.max_value),
       }))
       .filter(d => !isNaN(d.avg))
 
@@ -47,12 +53,12 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
       .domain(d3.extent(parsed, d => d.date))
       .range([margin.left, width - margin.right])
 
-    const minVal = d3.min(parsed, d => d.min)
-    const maxVal = d3.max(parsed, d => d.max)
+    const minVal = isEnergyDelta ? 0 : d3.min(parsed, d => d.min)
+    const maxVal = isEnergyDelta ? d3.max(parsed, d => d.avg) : d3.max(parsed, d => d.max)
     const pad = (maxVal - minVal) * 0.12 || 1
 
     const yScale = d3.scaleLinear()
-      .domain([minVal - pad, maxVal + pad])
+      .domain([isEnergyDelta ? 0 : minVal - pad, maxVal + pad])
       .range([height - margin.bottom, margin.top])
 
     // Grid lines
@@ -64,11 +70,33 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
       .attr('y1', d => yScale(d)).attr('y2', d => yScale(d))
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
-    // Min-max band
-    svg.append('path')
-      .datum(parsed)
-      .attr('d', d3.area().x(d => xScale(d.date)).y0(d => yScale(d.min)).y1(d => yScale(d.max)).curve(d3.curveMonotoneX))
-      .attr('fill', 'var(--accent)').attr('opacity', 0.1)
+    // Reference threshold lines
+    const thr = getThresholds(deviceClass)
+    if (thr) {
+      const [yDomMin, yDomMax] = yScale.domain()
+      thr.lines.forEach(line => {
+        if (line.value < yDomMin || line.value > yDomMax) return
+        const y = yScale(line.value)
+        svg.append('line')
+          .attr('x1', margin.left).attr('x2', width - margin.right)
+          .attr('y1', y).attr('y2', y)
+          .attr('stroke', line.color).attr('stroke-width', 1)
+          .attr('stroke-dasharray', line.dash ? '5 3' : 'none')
+          .attr('opacity', 0.7)
+        svg.append('text')
+          .attr('x', margin.left + 4).attr('y', y - 3)
+          .attr('font-size', '0.62rem').attr('fill', line.color).attr('opacity', 0.9)
+          .text(line.chartLabel)
+      })
+    }
+
+    // Min-max band — skipped for energy delta (values are already deltas per period)
+    if (!isEnergyDelta) {
+      svg.append('path')
+        .datum(parsed)
+        .attr('d', d3.area().x(d => xScale(d.date)).y0(d => yScale(d.min)).y1(d => yScale(d.max)).curve(d3.curveMonotoneX))
+        .attr('fill', 'var(--accent)').attr('opacity', 0.1)
+    }
 
     // Area under avg
     svg.append('path')
@@ -161,11 +189,13 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
         })
       })
 
-  }, [data, unit, aggPeriod])
+  }, [data, unit, aggPeriod, deviceClass])
 
   if (loading) return <p className="stats-loading">Loading...</p>
   if (!data.length) return <p className="stats-empty">No aggregated data for this period.</p>
+  if (data.length < 2) return <p className="stats-empty">Not enough data to draw a trend — only {data.length} aggregation point available. Try a shorter period or wait for more data to accumulate.</p>
 
+  const isEnergyDelta = deviceClass === 'energy'
   const fmt = v => `${Number(v).toFixed(2)}${unit ? ` ${unit}` : ''}`
 
   return (
@@ -177,9 +207,10 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from }) 
         <div className="heatmap-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y - 10 }}>
           <span className="heatmap-tooltip-label">{tooltip.label}</span>
           <span className="heatmap-tooltip-value">{fmt(tooltip.avg)}</span>
-          <span className="heatmap-tooltip-count">
-            Min {fmt(tooltip.min)} · Max {fmt(tooltip.max)}
-          </span>
+          {isEnergyDelta
+            ? <span className="heatmap-tooltip-count">Consumed in this {aggPeriod}</span>
+            : <span className="heatmap-tooltip-count">Min {fmt(tooltip.min)} · Max {fmt(tooltip.max)}</span>
+          }
         </div>
       )}
     </div>

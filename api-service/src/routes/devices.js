@@ -7,29 +7,49 @@ router.get('/', async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT
-                device_id,
-                BOOL_AND(available) AS available,
-                MAX(last_seen)      AS last_seen,
+                e.device_id,
+                BOOL_OR(e.available)   AS available,
+                MAX(e.last_seen)       AS last_seen,
+                dm.appliance_type,
+                dm.energy_class,
                 JSON_AGG(
                     JSON_BUILD_OBJECT(
-                        'entity_id',     entity_id,
-                        'domain',        domain,
-                        'friendly_name', friendly_name,
-                        'unit',          unit,
-                        'device_class',  device_class,
-                        'state',         state,
-                        'available',     available,
-                        'last_seen',     last_seen
-                    ) ORDER BY entity_id
+                        'entity_id',     e.entity_id,
+                        'domain',        e.domain,
+                        'friendly_name', e.friendly_name,
+                        'unit',          e.unit,
+                        'device_class',  e.device_class,
+                        'state',         e.state,
+                        'available',     e.available,
+                        'last_seen',     e.last_seen
+                    ) ORDER BY e.entity_id
                 ) AS entities
-            FROM entities
-            WHERE home_id = $1
-            GROUP BY device_id
-            ORDER BY MAX(last_seen) DESC NULLS LAST
+            FROM entities e
+            LEFT JOIN device_metadata dm
+                   ON dm.home_id = e.home_id AND dm.device_id = e.device_id
+            WHERE e.home_id = $1
+            GROUP BY e.device_id, dm.appliance_type, dm.energy_class
         `, [req.params.home_id]);
         res.json(result.rows);
     } catch (err) {
         console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PATCH /homes/:home_id/devices/:device_id/metadata
+router.patch('/:device_id/metadata', async (req, res) => {
+    const { home_id, device_id } = req.params;
+    const { appliance_type, energy_class } = req.body;
+    try {
+        await pool.query(`
+            INSERT INTO device_metadata (home_id, device_id, appliance_type, energy_class)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (home_id, device_id)
+            DO UPDATE SET appliance_type = $3, energy_class = $4, updated_at = NOW()
+        `, [home_id, device_id, appliance_type ?? null, energy_class ?? null]);
+        res.json({ ok: true });
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });

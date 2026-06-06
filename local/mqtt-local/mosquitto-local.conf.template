@@ -6,7 +6,7 @@ listener 1883 0.0.0.0
 allow_anonymous true
 
 connection cloud
-address mqtt-cloud:1883
+address MQTT_CLOUD_HOST:MQTT_CLOUD_PORT
 try_private false
 start_type automatic
 cleansession true

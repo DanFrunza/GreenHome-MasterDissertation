@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./HA/config:/config
+    restart: unless-stopped
+    depends_on:
+      - mqtt-local
+
+  mqtt-local:
+    image: eclipse-mosquitto:2
+    container_name: mqtt-local
+    ports:
+      - "1883:1883"
+    environment:
+      - HOME_ID=${HOME_ID}
+      - MQTT_CLOUD_HOST=${MQTT_CLOUD_HOST}
+      - MQTT_CLOUD_PORT=${MQTT_CLOUD_PORT}
+    volumes:
+      - ./mqtt-local/mosquitto-local.conf.template:/mosquitto/config/mosquitto.conf.template:ro
+      - ./mqtt-local/data:/mosquitto/data
+    entrypoint: >
+      sh -c "sed 's|HOME_ID|$HOME_ID|g; s|MQTT_CLOUD_HOST|$MQTT_CLOUD_HOST|g; s|MQTT_CLOUD_PORT|$MQTT_CLOUD_PORT|g'
+      /mosquitto/config/mosquitto.conf.template > /mosquitto/config/mosquitto.conf
+      && mosquitto -c /mosquitto/config/mosquitto.conf"
+    restart: unless-stopped
+
+  local-agent:
+    build: ./local-agent
+    container_name: local-agent
+    environment:
+      - MQTT_LOCAL_HOST=${MQTT_LOCAL_HOST}
+      - MQTT_LOCAL_PORT=${MQTT_LOCAL_PORT}
+      - HA_URL=${HA_URL}
+      - HA_TOKEN=${HA_TOKEN}
+    depends_on:
+      - mqtt-local
+      - homeassistant
+    restart: unless-stopped
+
+  co2-simulation:
+    build: ./simulations/co2-simulation
+    container_name: co2-simulator
+    depends_on:
+      - mqtt-local
+    restart: unless-stopped
+
+  umidification-simulation:
+    build: ./simulations/umidification-simulation
+    container_name: umidification-simulator
+    depends_on:
+      - mqtt-local
+    restart: unless-stopped
+
+  purifier-simulation:
+    build: ./simulations/purifier-simulation
+    container_name: purifier-simulator
+    depends_on:
+      - mqtt-local
+    restart: unless-stopped

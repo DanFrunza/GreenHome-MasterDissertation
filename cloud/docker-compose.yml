@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+
+  mqtt-cloud:
+    image: eclipse-mosquitto:2
+    container_name: mqtt-cloud
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./mqtt-cloud/mosquitto-cloud.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
+
+  mqtt-service:
+    build: ./mqtt-service
+    container_name: mqtt-service
+    environment:
+      - MQTT_CLOUD_HOST=mqtt-cloud
+      - MQTT_CLOUD_PORT=1883
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - mqtt-cloud
+      - postgres-db
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./analytics-service
+    container_name: analytics-service
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - postgres-db
+    restart: unless-stopped
+
+  api-service:
+    build: ./api-service
+    container_name: api-service
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - MQTT_HOST=mqtt-cloud
+      - MQTT_PORT=1883
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-db
+      - analytics-service
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./database/postgres-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./minio/minio-data:/data
+    restart: unless-stopped

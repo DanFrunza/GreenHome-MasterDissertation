@@ -1,29 +1,31 @@
-#Venv
+# Python environments
 .venv/
 venv/
 
-#Node modules
+# Node modules
 node_modules/
 
-#Persistent memory for the smart home system
-HA/
+# Home Assistant data
+local/HA/
 
-#Logs, databases, and secrets
+# Logs, databases
 *.log
 *.db
 secrets.yaml
 
-#Auto-generated files
+# Auto-generated files
 __pycache__/
 *.pyc
 
-#Environment variables
+# Environment variables
 .env
+cloud/.env
+local/.env
 
-#Persistent data volumes (Docker)
-minio/minio-data/
-mqtt-local/data/
-database/postgres-data/
+# Persistent data volumes (Docker)
+cloud/minio/minio-data/
+cloud/database/postgres-data/
+local/mqtt-local/data/
 
-#Generated config from template
-mqtt-local/mosquitto-local.conf
+# Generated config from template
+local/mqtt-local/mosquitto-local.conf

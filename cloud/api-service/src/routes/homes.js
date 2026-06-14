@@ -92,6 +92,21 @@ router.get('/:home_id', ownershipMiddleware, async (req, res) => {
     }
 })
 
+// PATCH /homes/:home_id — rename home (owner only)
+router.patch('/:home_id', ownershipMiddleware, requireOwner, async (req, res) => {
+    const { name } = req.body
+    if (!name?.trim()) return res.status(400).json({ error: 'name is required' })
+    try {
+        const result = await pool.query(
+            'UPDATE homes SET name = $1 WHERE id = $2 RETURNING id, name, status, last_seen, created_at',
+            [name.trim(), req.params.home_id]
+        )
+        res.json(result.rows[0])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
 // GET /homes/:home_id/config (any member)
 router.get('/:home_id/config', ownershipMiddleware, async (req, res) => {
     try {
@@ -102,15 +117,51 @@ router.get('/:home_id/config', ownershipMiddleware, async (req, res) => {
     }
 })
 
+// PATCH /homes/:home_id/config — update energy tariff (owner only)
+router.patch('/:home_id/config', ownershipMiddleware, requireOwner, async (req, res) => {
+    const { home_id } = req.params
+    const { tariff_flat, tariff_peak, tariff_offpeak, tariff_weekend, peak_start, peak_end, currency } = req.body
+    try {
+        const result = await pool.query(`
+            INSERT INTO home_config (home_id, tariff_flat, tariff_peak, tariff_offpeak, tariff_weekend, peak_start, peak_end, currency, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            ON CONFLICT (home_id) DO UPDATE SET
+                tariff_flat    = EXCLUDED.tariff_flat,
+                tariff_peak    = EXCLUDED.tariff_peak,
+                tariff_offpeak = EXCLUDED.tariff_offpeak,
+                tariff_weekend = EXCLUDED.tariff_weekend,
+                peak_start     = EXCLUDED.peak_start,
+                peak_end       = EXCLUDED.peak_end,
+                currency       = EXCLUDED.currency,
+                updated_at     = NOW()
+            RETURNING *
+        `, [
+            home_id,
+            tariff_flat    || null,
+            tariff_peak    || null,
+            tariff_offpeak || null,
+            tariff_weekend || null,
+            peak_start     || null,
+            peak_end       || null,
+            currency       || 'RON',
+        ])
+        res.json(result.rows[0])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
 // GET /homes/:home_id/anomalies?entity_id=&from=&limit= (any member)
 router.get('/:home_id/anomalies', ownershipMiddleware, async (req, res) => {
     const { home_id } = req.params
-    const { entity_id, from, limit = 50 } = req.query
-    const limitNum = Math.min(parseInt(limit) || 50, 500)
+    const { entity_id, from, to, limit = 50 } = req.query
+    const limitNum = Math.min(parseInt(limit) || 50, 2000)
     try {
         let query = `
             SELECT a.id, a.entity_id, a.detected_at, a.value, a.mean, a.std_dev, a.z_score, a.severity,
-                   e.friendly_name, e.unit, e.device_id
+                   e.friendly_name, e.unit, e.device_id, e.device_class,
+                   COALESCE(e.anomaly_suppressed, false) AS anomaly_suppressed,
+                   COALESCE(e.anomaly_muted,      false) AS anomaly_muted
             FROM anomalies a
             LEFT JOIN entities e ON e.home_id = a.home_id AND e.entity_id = a.entity_id
             WHERE a.home_id = $1
@@ -119,6 +170,7 @@ router.get('/:home_id/anomalies', ownershipMiddleware, async (req, res) => {
         let idx = 2
         if (entity_id) { query += ` AND a.entity_id = $${idx++}`; params.push(entity_id) }
         if (from)      { query += ` AND a.detected_at >= $${idx++}`; params.push(from) }
+        if (to)        { query += ` AND a.detected_at <= $${idx++}`; params.push(to) }
         query += ` ORDER BY a.detected_at DESC LIMIT ${limitNum}`
         const result = await pool.query(query, params)
         res.json(result.rows)
@@ -206,7 +258,8 @@ router.delete('/:home_id/members/:user_id', ownershipMiddleware, async (req, res
     const { home_id, user_id } = req.params
     const callerRole = req.userRole
 
-    if (callerRole === 'member') {
+    const isSelf = user_id === req.user.id
+    if (callerRole === 'member' && !isSelf) {
         return res.status(403).json({ error: 'Only admins and owners can remove members' })
     }
 

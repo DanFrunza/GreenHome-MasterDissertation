@@ -2,6 +2,7 @@ import asyncio
 import json
 import websockets
 from config import HA_URL, HA_TOKEN
+from handlers.ha_retry import ha_call
 
 HA_WS_URL = HA_URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
 
@@ -35,7 +36,7 @@ def handle_command(entity_id, payload):
 
     print(f"[COMMAND] {entity_id} → {service}")
     try:
-        asyncio.run(_call_service(domain, service, entity_id))
+        asyncio.run(ha_call(lambda: _call_service(domain, service, entity_id)))
         print(f"[COMMAND] OK")
     except Exception as e:
-        print(f"[COMMAND] Error: {e}")
+        print(f"[COMMAND] Failed after retries: {e}")

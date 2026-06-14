@@ -1,18 +1,25 @@
 CREATE TABLE IF NOT EXISTS users (
-    id            SERIAL PRIMARY KEY,
-    username      VARCHAR(100) UNIQUE NOT NULL,
-    email         VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255),
-    display_name  VARCHAR(100),
-    created_at    TIMESTAMP DEFAULT NOW()
+    id                     SERIAL PRIMARY KEY,
+    username               VARCHAR(100) UNIQUE NOT NULL,
+    email                  VARCHAR(150) UNIQUE NOT NULL,
+    password_hash          VARCHAR(255),
+    display_name           VARCHAR(100),
+    phone                  VARCHAR(20),
+    timezone               VARCHAR(50)  DEFAULT 'Europe/Bucharest',
+    language               VARCHAR(10)  DEFAULT 'en',
+    notifications_enabled  BOOLEAN      DEFAULT TRUE,
+    theme                  VARCHAR(20)  DEFAULT 'light',
+    updated_at             TIMESTAMP    DEFAULT NOW(),
+    created_at             TIMESTAMP    DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS homes (
-    id         VARCHAR(50) PRIMARY KEY,
-    name       VARCHAR(100),
-    status     VARCHAR(20) DEFAULT 'offline',
-    last_seen  TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
+    id           VARCHAR(50) PRIMARY KEY,
+    name         VARCHAR(100),
+    status       VARCHAR(20) DEFAULT 'offline',
+    agent_status VARCHAR(20) DEFAULT 'offline',
+    last_seen    TIMESTAMP,
+    created_at   TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS user_homes (
@@ -31,9 +38,11 @@ CREATE TABLE IF NOT EXISTS entities (
     friendly_name VARCHAR(150),
     unit          VARCHAR(20),
     device_class  VARCHAR(50),
-    state         TEXT,
-    available     BOOLEAN DEFAULT true,
-    last_seen     TIMESTAMP,
+    state              TEXT,
+    available          BOOLEAN DEFAULT true,
+    last_seen          TIMESTAMP,
+    anomaly_muted      BOOLEAN DEFAULT false,
+    anomaly_suppressed BOOLEAN DEFAULT false,
     PRIMARY KEY (home_id, entity_id)
 );
 
@@ -164,6 +173,16 @@ CREATE TABLE IF NOT EXISTS predictions (
     UNIQUE (home_id, entity_id, target_time)
 );
 CREATE INDEX IF NOT EXISTS predictions_home_entity ON predictions (home_id, entity_id, target_time);
+
+CREATE TABLE IF NOT EXISTS meter_resets (
+    id            SERIAL PRIMARY KEY,
+    home_id       VARCHAR(50)  NOT NULL,
+    entity_id     VARCHAR(150) NOT NULL,
+    reset_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    value_before  NUMERIC,
+    value_after   NUMERIC
+);
+CREATE INDEX IF NOT EXISTS meter_resets_entity_idx ON meter_resets (home_id, entity_id, reset_at DESC);
 
 CREATE TABLE IF NOT EXISTS home_credentials (
     home_id            VARCHAR(50) PRIMARY KEY REFERENCES homes(id) ON DELETE CASCADE,

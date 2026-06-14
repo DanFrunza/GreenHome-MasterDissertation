@@ -1,0 +1,772 @@
+.eco-page {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.eco-header { margin-bottom: 0.25rem; }
+
+.eco-title {
+  margin: 0 0 0.35rem;
+  font-size: 2rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.eco-subtitle {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+/* ── Section shell ───────────────────────────────────────────────────────── */
+.eco-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.eco-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eco-section-title {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.eco-section-sub {
+  margin: 0;
+  font-size: 0.825rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.eco-section-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.73rem;
+  color: var(--muted-foreground);
+  opacity: 0.65;
+  font-style: italic;
+}
+
+/* ── Quick Wins grid ─────────────────────────────────────────────────────── */
+.eco-qw-arrows {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.eco-arrow-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.eco-arrow-btn:hover:not(:disabled) { background: var(--accent-bg); color: var(--accent); }
+.eco-arrow-btn:disabled { opacity: 0.35; cursor: default; }
+
+.eco-page-indicator {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  min-width: 2.75rem;
+  text-align: center;
+}
+
+.eco-qw-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.eco-qw-card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+
+.eco-qw-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.eco-qw-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.eco-qw-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.eco-qw-saving {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--status-online);
+}
+
+.eco-qw-badges {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.eco-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eco-badge-green  { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
+.eco-badge-blue   { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.eco-badge-purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.eco-badge-muted  { background: var(--muted); color: var(--muted-foreground); border: 1px solid var(--border); }
+
+/* ── Dots ────────────────────────────────────────────────────────────────── */
+.eco-qw-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.eco-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.eco-dot:hover        { background: var(--muted-foreground); }
+.eco-dot-active       { background: var(--accent); transform: scale(1.25); }
+
+/* ── Green Score ─────────────────────────────────────────────────────────── */
+.gs-empty {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  padding: 1rem 0;
+  text-align: center;
+}
+.gs-empty-link { color: var(--accent); text-decoration: none; }
+.gs-empty-link:hover { text-decoration: underline; }
+
+.gs-summary {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gs-circle {
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  transition: border-color 0.3s;
+}
+
+.gs-score-num {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+}
+
+.gs-grade-letter {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gs-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.gs-meta-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.85rem;
+}
+
+.gs-grade-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.gs-meta-label { color: var(--muted-foreground); min-width: 140px; }
+.gs-meta-value { font-weight: 600; color: var(--foreground); }
+
+.gs-meta-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  opacity: 0.65;
+  font-style: italic;
+}
+
+.gs-device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.gs-device-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.gs-device-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.gs-device-name {
+  font-size: 0.825rem;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gs-badge-est {
+  font-size: 0.63rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(234, 179, 8, 0.12);
+  color: #ca8a04;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gs-bar-wrap {
+  position: relative;
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.gs-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.gs-device-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.gs-device-kwh {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.gs-device-score {
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-width: 2ch;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .gs-device-row { grid-template-columns: 1fr 1.5fr auto; }
+  .gs-device-kwh { display: none; }
+  .gs-summary { flex-direction: column; align-items: flex-start; gap: 1rem; }
+}
+
+/* ── Energy Tips filters ─────────────────────────────────────────────────── */
+.eco-tip-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.eco-filter-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.eco-filter-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.eco-filter-btn.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+
+/* ── Energy Tips grid ────────────────────────────────────────────────────── */
+.eco-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.eco-tip-card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.125rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.eco-tip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.eco-tip-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.eco-tip-saving {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--status-online);
+}
+
+.eco-cat-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eco-cat-heating  { background: rgba(249, 115, 22, 0.12); color: #f97316; }
+.eco-cat-lighting { background: rgba(234, 179, 8, 0.12);  color: #ca8a04; }
+.eco-cat-cooling  { background: rgba(14, 165, 233, 0.12); color: #0ea5e9; }
+.eco-cat-refrig   { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+.eco-cat-laundry  { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+.eco-cat-elec     { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+.eco-cat-water    { background: rgba(34, 197, 94, 0.12);  color: #22c55e; }
+.eco-cat-cyan     { background: rgba(6, 182, 212, 0.12);  color: #06b6d4; }
+.eco-cat-solar    { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+.eco-cat-default  { background: var(--muted); color: var(--muted-foreground); border: 1px solid var(--border); }
+
+.eco-badge-red    { background: rgba(239, 68, 68, 0.12);  color: #ef4444; }
+.eco-badge-yellow { background: rgba(234, 179, 8, 0.12);  color: #ca8a04; }
+
+.eco-tip-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.eco-tip-body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.eco-tip-automation {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eco-tip-automation-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.eco-tip-automation-text {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.eco-tip-automation-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.eco-tip-automation-link:hover { text-decoration: underline; }
+
+
+/* ── Automation Ideas ────────────────────────────────────────────────────────── */
+.eco-filter-foryou.active {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+.eco-filter-foryou:hover {
+  background: rgba(139, 92, 246, 0.08);
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.ai-for-you-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.ai-card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.125rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ai-card-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.ai-card-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.55;
+}
+
+.ai-card-flow {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.ai-flow-row {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.ai-flow-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.ai-flow-when { color: var(--accent); }
+.ai-flow-if   { color: #22c55e; }
+.ai-flow-then { color: #f97316; }
+
+.ai-flow-text {
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.ai-card-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 0.1rem;
+}
+
+.ai-saving {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--status-online);
+}
+
+.ai-saving-alt {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+/* ── HA Tutorial ─────────────────────────────────────────────────────────── */
+.ha-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ha-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.ha-step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.05rem;
+}
+
+.ha-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ha-step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.ha-step-detail {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.ha-code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.35rem;
+  color: var(--foreground);
+}
+
+.ha-examples-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.ha-example-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ha-example-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ha-example-sub {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+
+.ha-example-list {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ha-example-list li {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.45;
+}
+
+/* ── HA Explore ──────────────────────────────────────────────────────────── */
+.ha-explore {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ha-explore-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ha-explore-text {
+  margin: 0;
+  font-size: 0.835rem;
+  color: var(--muted-foreground);
+  line-height: 1.65;
+}
+
+.ha-explore-tagline {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.ha-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.ha-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.ha-link-btn:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .eco-qw-grid      { grid-template-columns: repeat(2, 1fr); }
+  .eco-tips-grid    { grid-template-columns: 1fr; }
+  .ai-grid          { grid-template-columns: 1fr; }
+  .ha-examples-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 500px) {
+  .eco-qw-grid { grid-template-columns: 1fr; }
+}

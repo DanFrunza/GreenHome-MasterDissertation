@@ -1,6 +1,31 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const pool = require('../db');
+const { requireOwner } = require('../middleware/ownership');
+
+// GET /homes/:home_id/entities/:entity_id/fault-events?from=&to=&limit=
+// Returns timestamps when a binary sensor had value='on' within the period
+router.get('/:entity_id/fault-events', async (req, res) => {
+    const { home_id, entity_id } = req.params;
+    const { from, to, limit = 5 } = req.query;
+    const limitNum = Math.min(parseInt(limit) || 5, 20);
+    try {
+        let query = `
+            SELECT recorded_at
+            FROM measurements
+            WHERE home_id = $1 AND entity_id = $2 AND value = 'on'
+        `;
+        const params = [home_id, entity_id];
+        let idx = 3;
+        if (from) { query += ` AND recorded_at >= $${idx++}`; params.push(from); }
+        if (to)   { query += ` AND recorded_at <= $${idx++}`; params.push(to); }
+        query += ` ORDER BY recorded_at DESC LIMIT ${limitNum}`;
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // GET /homes/:home_id/entities/:entity_id/measurements
 router.get('/:entity_id/measurements', async (req, res) => {
@@ -61,25 +86,67 @@ router.get('/:entity_id/overview', async (req, res) => {
     const { from, to } = req.query;
 
     try {
-        let query = `
+        const params = [home_id, entity_id];
+        let idx = 3;
+        let filters = '';
+
+        if (from) { filters += ` AND recorded_at >= $${idx++}`; params.push(from); }
+        if (to)   { filters += ` AND recorded_at <= $${idx++}`; params.push(to); }
+
+        const query = `
+            WITH filtered AS (
+                SELECT value_numeric, recorded_at
+                FROM measurements
+                WHERE home_id = $1 AND entity_id = $2 AND value_numeric IS NOT NULL
+                ${filters}
+            )
             SELECT
-                AVG(value_numeric)   AS avg_value,
-                MIN(value_numeric)   AS min_value,
-                MAX(value_numeric)   AS max_value,
-                COUNT(*)             AS count,
-                MIN(recorded_at)     AS first_recorded,
-                MAX(recorded_at)     AS last_recorded
-            FROM measurements
-            WHERE home_id = $1 AND entity_id = $2 AND value_numeric IS NOT NULL
+                AVG(value_numeric)         AS avg_value,
+                MIN(value_numeric)         AS min_value,
+                MAX(value_numeric)         AS max_value,
+                COUNT(*)                   AS count,
+                MIN(recorded_at)           AS first_recorded,
+                MAX(recorded_at)           AS last_recorded,
+                STDDEV_SAMP(value_numeric) AS std_dev,
+                (SELECT value_numeric FROM measurements m2
+                 WHERE m2.home_id = $1 AND m2.entity_id = $2 AND m2.value_numeric IS NOT NULL
+                 ORDER BY m2.recorded_at DESC LIMIT 1) AS last_value,
+                (SELECT recorded_at FROM filtered
+                 ORDER BY value_numeric ASC,  recorded_at ASC  LIMIT 1) AS min_recorded_at,
+                (SELECT recorded_at FROM filtered
+                 ORDER BY value_numeric DESC, recorded_at ASC  LIMIT 1) AS max_recorded_at,
+                (SELECT value_numeric FROM filtered ORDER BY recorded_at ASC  LIMIT 1) AS first_value,
+                (SELECT value_numeric FROM filtered ORDER BY recorded_at DESC LIMIT 1) AS period_last_value
+            FROM filtered
+        `;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /homes/:home_id/entities/:entity_id/meter-resets?from=&to=
+router.get('/:entity_id/meter-resets', async (req, res) => {
+    const { home_id, entity_id } = req.params;
+    const { from, to } = req.query;
+
+    try {
+        let query = `
+            SELECT id, reset_at, value_before, value_after
+            FROM meter_resets
+            WHERE home_id = $1 AND entity_id = $2
         `;
         const params = [home_id, entity_id];
         let idx = 3;
 
-        if (from) { query += ` AND recorded_at >= $${idx++}`; params.push(from); }
-        if (to)   { query += ` AND recorded_at <= $${idx++}`; params.push(to); }
+        if (from) { query += ` AND reset_at >= $${idx++}`; params.push(from); }
+        if (to)   { query += ` AND reset_at <= $${idx++}`; params.push(to); }
+        query += ' ORDER BY reset_at DESC';
 
         const result = await pool.query(query, params);
-        res.json(result.rows[0]);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -322,28 +389,45 @@ router.get('/:entity_id/prediction-accuracy', async (req, res) => {
     const { home_id, entity_id } = req.params;
     try {
         const result = await pool.query(`
+            WITH entity_info AS (
+                SELECT unit, device_class FROM entities WHERE home_id = $1 AND entity_id = $2
+            ),
+            hourly_actual AS (
+                SELECT
+                    a.period_start,
+                    CASE
+                        WHEN ei.device_class = 'energy' OR ei.unit = 'kWh'
+                        THEN GREATEST(0, a.avg_value - LAG(a.avg_value) OVER (ORDER BY a.period_start))
+                        ELSE a.avg_value
+                    END AS actual_value
+                FROM aggregations a
+                CROSS JOIN entity_info ei
+                WHERE a.home_id = $1 AND a.entity_id = $2 AND a.period = 'hour'
+                  AND a.period_start >= NOW() - INTERVAL '8 days'
+            )
             SELECT
-                AVG(ABS(p.predicted_value - a.avg_value)) AS mae,
-                AVG(a.avg_value)                           AS mean_actual,
-                COUNT(*)                                   AS n
+                AVG(ABS(p.predicted_value - ha.actual_value)) AS mae,
+                AVG(ha.actual_value)                           AS mean_actual,
+                COUNT(*)                                       AS n,
+                (SELECT COUNT(*) FROM aggregations
+                 WHERE home_id = $1 AND entity_id = $2 AND period = 'hour'
+                   AND period_start >= NOW() - INTERVAL '90 days') AS training_count
             FROM predictions p
-            JOIN aggregations a
-              ON  a.home_id      = p.home_id
-              AND a.entity_id    = p.entity_id
-              AND a.period       = 'hour'
-              AND a.period_start = p.target_time
+            JOIN hourly_actual ha ON ha.period_start = p.target_time
             WHERE p.home_id   = $1
               AND p.entity_id = $2
               AND p.target_time < NOW()
               AND p.target_time >= NOW() - INTERVAL '7 days'
+              AND ha.actual_value IS NOT NULL
         `, [home_id, entity_id]);
         const row = result.rows[0];
         if (!row || parseInt(row.n) === 0) return res.json({ available: false });
         res.json({
-            available:    true,
-            mae:          row.mae          != null ? parseFloat(row.mae)          : null,
-            mean_actual:  row.mean_actual  != null ? parseFloat(row.mean_actual)  : null,
-            n:            parseInt(row.n),
+            available:       true,
+            mae:             row.mae            != null ? parseFloat(row.mae)            : null,
+            mean_actual:     row.mean_actual    != null ? parseFloat(row.mean_actual)    : null,
+            n:               parseInt(row.n),
+            training_count:  row.training_count != null ? parseInt(row.training_count)  : null,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -359,7 +443,7 @@ router.get('/:entity_id/predictions', async (req, res) => {
             FROM predictions
             WHERE home_id = $1 AND entity_id = $2
               AND target_time > NOW() - INTERVAL '1 hour'
-              AND target_time <= NOW() + INTERVAL '7 days'
+              AND target_time <= NOW() + INTERVAL '30 days'
             ORDER BY target_time ASC
         `, [home_id, entity_id]);
         res.json(result.rows);
@@ -369,7 +453,7 @@ router.get('/:entity_id/predictions', async (req, res) => {
 });
 
 // POST /homes/:home_id/entities/:entity_id/command
-router.post('/:entity_id/command', async (req, res) => {
+router.post('/:entity_id/command', requireOwner, async (req, res) => {
     const { home_id, entity_id } = req.params;
     const { action } = req.body;
 
@@ -393,5 +477,32 @@ router.post('/:entity_id/command', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// PATCH /homes/:home_id/entities/:entity_id/anomaly-settings
+router.patch('/:entity_id/anomaly-settings', async (req, res) => {
+    const { home_id, entity_id } = req.params
+    const { muted, suppressed } = req.body
+    if (typeof muted !== 'boolean' && typeof suppressed !== 'boolean') {
+        return res.status(400).json({ error: 'Provide at least one of: muted, suppressed (boolean)' })
+    }
+    const updates = []
+    const params  = []
+    let idx = 1
+    if (typeof muted      === 'boolean') { updates.push(`anomaly_muted = $${idx++}`);      params.push(muted) }
+    if (typeof suppressed === 'boolean') { updates.push(`anomaly_suppressed = $${idx++}`); params.push(suppressed) }
+    params.push(home_id, entity_id)
+    try {
+        const result = await pool.query(
+            `UPDATE entities SET ${updates.join(', ')}
+             WHERE home_id = $${idx++} AND entity_id = $${idx++}
+             RETURNING entity_id, anomaly_muted, anomaly_suppressed`,
+            params
+        )
+        if (!result.rows.length) return res.status(404).json({ error: 'Entity not found' })
+        res.json(result.rows[0])
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
 
 module.exports = router;

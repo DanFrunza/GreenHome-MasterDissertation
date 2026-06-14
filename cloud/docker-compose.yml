@@ -3,12 +3,14 @@ version: "3.9"
 services:
 
   mqtt-cloud:
-    image: eclipse-mosquitto:2
+    build: ./mqtt-cloud
     container_name: mqtt-cloud
     ports:
       - "1884:1883"
     volumes:
-      - ./mqtt-cloud/mosquitto-cloud.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt-cloud/mosquitto-cloud.conf:/etc/mosquitto/mosquitto.conf
+    depends_on:
+      - api-service
     restart: unless-stopped
 
   mqtt-service:
@@ -17,14 +19,18 @@ services:
     environment:
       - MQTT_CLOUD_HOST=mqtt-cloud
       - MQTT_CLOUD_PORT=1883
+      - MQTT_SERVICE_USER=${MQTT_SERVICE_USER}
+      - MQTT_SERVICE_PASSWORD=${MQTT_SERVICE_PASSWORD}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
     depends_on:
-      - mqtt-cloud
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+      mqtt-cloud:
+        condition: service_started
     restart: unless-stopped
 
   analytics-service:
@@ -37,7 +43,8 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     restart: unless-stopped
 
   api-service:
@@ -52,11 +59,15 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - MQTT_HOST=mqtt-cloud
       - MQTT_PORT=1883
+      - MQTT_SERVICE_USER=${MQTT_SERVICE_USER}
+      - MQTT_SERVICE_PASSWORD=${MQTT_SERVICE_PASSWORD}
     ports:
       - "3001:3001"
     depends_on:
-      - postgres-db
-      - analytics-service
+      postgres-db:
+        condition: service_healthy
+      analytics-service:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
@@ -78,6 +89,11 @@ services:
     volumes:
       - ./database/postgres-data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   minio:

@@ -5,11 +5,13 @@ const { jwtMiddleware } = require('./src/middleware/auth')
 const { ownershipMiddleware } = require('./src/middleware/ownership')
 
 const authRouter        = require('./src/routes/auth')
+const mqttAuthRouter    = require('./src/routes/mqtt-auth')
 const homesRouter       = require('./src/routes/homes')
 const devicesRouter     = require('./src/routes/devices')
 const entitiesRouter    = require('./src/routes/entities')
 const automationsRouter = require('./src/routes/automations')
 const usersRouter       = require('./src/routes/users')
+const configRouter      = require('./src/routes/config')
 
 const app = express()
 app.use(cors())
@@ -19,6 +21,8 @@ app.get('/', (_req, res) => res.send('API Service running!'))
 
 // Public routes — no token required
 app.use('/auth', authRouter)
+app.use('/mqtt', mqttAuthRouter)
+app.use('/config', configRouter)
 
 // All routes below require a valid JWT
 app.use(jwtMiddleware)

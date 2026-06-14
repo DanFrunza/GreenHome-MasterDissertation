@@ -23,7 +23,7 @@ export function HomeProvider({ children }) {
           if (prev) {
             const updated = data.find(h => h.id === prev.id)
             if (!updated) return data[0] ?? null
-            if (updated.status === prev.status && updated.name === prev.name) return prev
+            if (updated.status === prev.status && updated.agent_status === prev.agent_status && updated.name === prev.name) return prev
             return updated
           }
           const savedId = localStorage.getItem('selectedHomeId')

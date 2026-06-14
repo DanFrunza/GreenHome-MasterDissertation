@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { getThresholds } from '../utils/thresholds'
+import { useConfig } from '../hooks/useConfig'
 
 const SEASONS = [
   { key: 'Spring', color: '#22c55e', months: 'Mar – May' },
@@ -11,7 +12,8 @@ const SEASONS = [
   { key: 'Winter', color: '#3b82f6', months: 'Dec – Feb' },
 ]
 
-export default function SeasonalChart({ homeId, entityId, unit, from, deviceClass }) {
+export default function SeasonalChart({ homeId, entityId, unit, deviceClass }) {
+  const { thresholds: thresholdsData = null } = useConfig()
   const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -64,12 +66,11 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
     }
 
     const params = new URLSearchParams({ tz })
-    if (from) params.set('from', from)
     apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/seasonal-profile?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, from, deviceClass])
+  }, [homeId, entityId, deviceClass])
 
   useEffect(() => {
     if (!data || !svgRef.current || !containerRef.current) return
@@ -93,7 +94,8 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
     )
     const [minV, maxV] = d3.extent(allValues)
     const pad = (maxV - minV) * 0.12 || 1
-    const yScale = d3.scaleLinear().domain([minV - pad, maxV + pad]).range([height - margin.bottom, margin.top])
+    const yMin = deviceClass === 'energy' || unit === 'W' ? Math.max(0, minV - pad) : minV - pad
+    const yScale = d3.scaleLinear().domain([yMin, maxV + pad]).range([height - margin.bottom, margin.top])
 
     // Grid
     svg.append('g').selectAll('line')
@@ -103,7 +105,7 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
     // Reference threshold lines
-    const thr = getThresholds(deviceClass)
+    const thr = getThresholds(deviceClass, thresholdsData)
     if (thr) {
       const [yDomMin, yDomMax] = yScale.domain()
       thr.lines.forEach(line => {
@@ -152,7 +154,7 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
     // Axes
     svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(xScale).ticks(12).tickFormat(h => `${h}:00`).tickSize(0))
+      .call(d3.axisBottom(xScale).ticks(12).tickFormat(h => `${String(h).padStart(2,'0')}:00`).tickSize(0))
       .call(g => g.select('.domain').attr('stroke', 'var(--border)'))
       .call(g => g.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', '0.68rem').attr('dy', '1.1em'))
 
@@ -180,12 +182,13 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
           season: s.key,
           color:  s.color,
           value:  data[s.key][clampedH]?.avg_value ?? null,
+          count:  data[s.key][clampedH]?.count ?? 0,
         })).filter(v => v.value != null)
         if (!values.length) return
         setTooltip({ x: event.clientX - box.left, y: event.clientY - box.top, hour: clampedH, values })
       })
 
-  }, [data, unit, deviceClass])
+  }, [data, unit, deviceClass, thresholdsData])
 
   const presentCount = data ? SEASONS.filter(s => data[s.key]).length : 0
 
@@ -233,10 +236,11 @@ export default function SeasonalChart({ homeId, entityId, unit, from, deviceClas
       </div>
       {tooltip && (
         <div className="heatmap-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y - 10, minWidth: 140 }}>
-          <span className="heatmap-tooltip-label">{tooltip.hour}:00 – {tooltip.hour}:59</span>
+          <span className="heatmap-tooltip-label">{String(tooltip.hour).padStart(2,'0')}:00 – {String(tooltip.hour).padStart(2,'0')}:59</span>
           {tooltip.values.map(v => (
             <span key={v.season} className="heatmap-tooltip-value" style={{ color: v.color }}>
               {v.season}: {Number(v.value).toFixed(2)}{unit ? ` ${unit}` : ''}
+              {v.count > 0 && <span style={{ opacity: 0.6, fontSize: '0.7rem' }}> (n={v.count})</span>}
             </span>
           ))}
         </div>

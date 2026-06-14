@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { getThresholds } from '../utils/thresholds'
+import { useConfig } from '../hooks/useConfig'
 import { HOUR_LABELS } from '../utils/chartUtils'
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -13,7 +14,8 @@ const isNight = h => NIGHT_HOURS.has(h)
 const COLOR_WEEKDAY = 'var(--accent)'
 const COLOR_WEEKEND = '#f59e0b'
 
-export default function HourlyProfileChart({ homeId, entityId, unit, from, deviceClass }) {
+export default function HourlyProfileChart({ homeId, entityId, unit, from, to, deviceClass }) {
+  const { thresholds: thresholdsData = null } = useConfig()
   const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -28,47 +30,24 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from, devic
     setLoading(true)
 
     if (deviceClass === 'energy') {
-      const params = new URLSearchParams({ period: 'hour' })
+      const params = new URLSearchParams({ tz: TZ })
       if (from) params.set('from', from)
-      apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
+      if (to)   params.set('to', to)
+      apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/hourly-agg-split?${params}`)
         .then(r => r.json())
-        .then(rows => {
-          const groups = {}
-          rows.forEach(r => {
-            const delta = Math.max(0, parseFloat(r.max_value) - parseFloat(r.min_value))
-            if (isNaN(delta) || !isFinite(delta)) return
-            const parts = new Intl.DateTimeFormat('en-US', {
-              timeZone: TZ, year: 'numeric', month: 'numeric',
-              day: 'numeric', hour: 'numeric', hour12: false,
-            }).formatToParts(new Date(r.period_start))
-            const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0')
-            const hour = get('hour') % 24
-            const dow  = new Date(get('year'), get('month') - 1, get('day')).getDay()
-            const type = (dow === 0 || dow === 6) ? 'weekend' : 'weekday'
-            if (!groups[hour]) groups[hour] = { weekday: { sum: 0, count: 0 }, weekend: { sum: 0, count: 0 } }
-            groups[hour][type].sum += delta
-            groups[hour][type].count++
-          })
-          setData(Array.from({ length: 24 }, (_, h) => ({
-            hour: h,
-            weekday_avg:   groups[h]?.weekday.count ? groups[h].weekday.sum / groups[h].weekday.count : null,
-            weekday_count: groups[h]?.weekday.count ?? 0,
-            weekend_avg:   groups[h]?.weekend.count ? groups[h].weekend.sum / groups[h].weekend.count : null,
-            weekend_count: groups[h]?.weekend.count ?? 0,
-          })))
-          setLoading(false)
-        })
+        .then(d => { setData(d); setLoading(false) })
         .catch(() => setLoading(false))
       return
     }
 
-    const params = new URLSearchParams({ TZ })
+    const params = new URLSearchParams({ tz: TZ })
     if (from) params.set('from', from)
+    if (to)   params.set('to', to)
     apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/hourly-profile-split?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, from, deviceClass])
+  }, [homeId, entityId, from, to, deviceClass])
 
   useEffect(() => {
     if (!data.length || !svgRef.current || !containerRef.current) return
@@ -144,7 +123,7 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from, devic
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
     // Reference threshold lines
-    const thr = getThresholds(deviceClass)
+    const thr = getThresholds(deviceClass, thresholdsData)
     if (thr) {
       const [yDomMin, yDomMax] = yScale.domain()
       thr.lines.forEach(line => {
@@ -233,17 +212,28 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from, devic
   if (!data.some(d => d.weekday_avg != null || d.weekend_avg != null))
     return <p className="stats-empty">No data for this period.</p>
 
+  const hasWeekday = data.some(d => d.weekday_avg != null)
+  const hasWeekend = data.some(d => d.weekend_avg != null)
+
   const fmt = v => v != null ? `${Number(v).toFixed(2)}${unit ? ` ${unit}` : ''}` : '—'
 
-  const dayDiff = dayNight?.dayAvg != null && dayNight?.nightAvg != null
-    ? { pct: Math.abs(((dayNight.dayAvg - dayNight.nightAvg) / dayNight.nightAvg) * 100).toFixed(0),
-        higher: dayNight.dayAvg >= dayNight.nightAvg ? 'day' : 'night' }
-    : null
+  const dayDiff = (() => {
+    if (dayNight?.dayAvg == null || dayNight?.nightAvg == null) return null
+    const higher = dayNight.dayAvg >= dayNight.nightAvg ? 'day' : 'night'
+    const higherVal = higher === 'day' ? dayNight.dayAvg : dayNight.nightAvg
+    const lower     = higher === 'day' ? dayNight.nightAvg : dayNight.dayAvg
+    if (lower <= 1e-6) return null
+    return { pct: ((higherVal - lower) / lower * 100).toFixed(0), higher }
+  })()
 
-  const weekDiff = weekSplit?.weekdayAvg != null && weekSplit?.weekendAvg != null
-    ? { pct: Math.abs(((weekSplit.weekdayAvg - weekSplit.weekendAvg) / weekSplit.weekendAvg) * 100).toFixed(0),
-        higher: weekSplit.weekdayAvg >= weekSplit.weekendAvg ? 'weekdays' : 'weekends' }
-    : null
+  const weekDiff = (() => {
+    if (weekSplit?.weekdayAvg == null || weekSplit?.weekendAvg == null) return null
+    const higher = weekSplit.weekdayAvg >= weekSplit.weekendAvg ? 'weekdays' : 'weekends'
+    const higherVal = higher === 'weekdays' ? weekSplit.weekdayAvg : weekSplit.weekendAvg
+    const lower     = higher === 'weekdays' ? weekSplit.weekendAvg : weekSplit.weekdayAvg
+    if (lower <= 1e-6) return null
+    return { pct: ((higherVal - lower) / lower * 100).toFixed(0), higher }
+  })()
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
@@ -253,59 +243,87 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from, devic
 
       {/* Legend */}
       <div className="chart-legend" style={{ marginTop: '0.5rem' }}>
-        <span className="legend-item">
-          <span className="legend-band" style={{ background: COLOR_WEEKDAY, opacity: 1, border: 'none' }} />
-          Weekday (Mon–Fri)
-        </span>
-        <span className="legend-item">
-          <span className="legend-band" style={{ background: COLOR_WEEKEND, opacity: 1, border: 'none' }} />
-          Weekend (Sat–Sun)
-        </span>
+        {hasWeekday && (
+          <span className="legend-item">
+            <span className="legend-band" style={{ background: COLOR_WEEKDAY, opacity: 1, border: 'none' }} />
+            Weekday (Mon–Fri)
+          </span>
+        )}
+        {hasWeekend && (
+          <span className="legend-item">
+            <span className="legend-band" style={{ background: COLOR_WEEKEND, opacity: 1, border: 'none' }} />
+            Weekend (Sat–Sun)
+          </span>
+        )}
         <span className="legend-item">
           <span className="legend-band" style={{ background: 'var(--muted)', opacity: 1, border: 'none' }} />
           Night zone (22:00–06:00)
         </span>
+        {hasWeekday && !hasWeekend && (
+          <span className="legend-note">No weekend data in selected period</span>
+        )}
+        {hasWeekend && !hasWeekday && (
+          <span className="legend-note">No weekday data in selected period</span>
+        )}
       </div>
 
       {/* Day/Night + Weekday/Weekend summaries */}
       {(dayNight || weekSplit) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
 
-          {dayNight?.dayAvg != null && dayNight?.nightAvg != null && (
+          {(dayNight?.dayAvg != null || dayNight?.nightAvg != null) && (
             <div className="daynight-stats">
-              <div className="daynight-stat">
-                <span className="daynight-period">Day avg</span>
-                <span className="daynight-value">{fmt(dayNight.dayAvg)}</span>
-                <span className="daynight-range">06:00 – 22:00</span>
-              </div>
-              <div className="daynight-divider" />
-              <div className="daynight-stat">
-                <span className="daynight-period">Night avg</span>
-                <span className="daynight-value">{fmt(dayNight.nightAvg)}</span>
-                <span className="daynight-range">22:00 – 06:00</span>
-              </div>
-              {dayDiff && (
-                <div className="daynight-diff">{dayDiff.pct}% higher during {dayDiff.higher}</div>
+              {dayNight?.dayAvg != null && (
+                <div className="daynight-stat">
+                  <span className="daynight-period">Day avg</span>
+                  <span className="daynight-value">{fmt(dayNight.dayAvg)}</span>
+                  <span className="daynight-range">06:00 – 22:00</span>
+                </div>
               )}
+              {dayNight?.dayAvg != null && dayNight?.nightAvg != null && <div className="daynight-divider" />}
+              {dayNight?.nightAvg != null && (
+                <div className="daynight-stat">
+                  <span className="daynight-period">Night avg</span>
+                  <span className="daynight-value">{fmt(dayNight.nightAvg)}</span>
+                  <span className="daynight-range">22:00 – 06:00</span>
+                </div>
+              )}
+              {dayDiff
+                ? <div className="daynight-diff">↑ +{dayDiff.pct}% during {dayDiff.higher}</div>
+                : dayNight?.dayAvg != null && dayNight?.nightAvg == null
+                  ? <div className="daynight-diff">No night data in period</div>
+                  : dayNight?.nightAvg != null && dayNight?.dayAvg == null
+                    ? <div className="daynight-diff">No day data in period</div>
+                    : null
+              }
             </div>
           )}
 
-          {weekSplit?.weekdayAvg != null && weekSplit?.weekendAvg != null && (
+          {(weekSplit?.weekdayAvg != null || weekSplit?.weekendAvg != null) && (
             <div className="daynight-stats">
-              <div className="daynight-stat">
-                <span className="daynight-period" style={{ color: COLOR_WEEKDAY }}>Weekday avg</span>
-                <span className="daynight-value">{fmt(weekSplit.weekdayAvg)}</span>
-                <span className="daynight-range">Mon – Fri</span>
-              </div>
-              <div className="daynight-divider" />
-              <div className="daynight-stat">
-                <span className="daynight-period" style={{ color: COLOR_WEEKEND }}>Weekend avg</span>
-                <span className="daynight-value">{fmt(weekSplit.weekendAvg)}</span>
-                <span className="daynight-range">Sat – Sun</span>
-              </div>
-              {weekDiff && (
-                <div className="daynight-diff">{weekDiff.pct}% higher on {weekDiff.higher}</div>
+              {weekSplit?.weekdayAvg != null && (
+                <div className="daynight-stat">
+                  <span className="daynight-period" style={{ color: COLOR_WEEKDAY }}>Weekday avg</span>
+                  <span className="daynight-value">{fmt(weekSplit.weekdayAvg)}</span>
+                  <span className="daynight-range">Mon – Fri</span>
+                </div>
               )}
+              {weekSplit?.weekdayAvg != null && weekSplit?.weekendAvg != null && <div className="daynight-divider" />}
+              {weekSplit?.weekendAvg != null && (
+                <div className="daynight-stat">
+                  <span className="daynight-period" style={{ color: COLOR_WEEKEND }}>Weekend avg</span>
+                  <span className="daynight-value">{fmt(weekSplit.weekendAvg)}</span>
+                  <span className="daynight-range">Sat – Sun</span>
+                </div>
+              )}
+              {weekDiff
+                ? <div className="daynight-diff">↑ +{weekDiff.pct}% on {weekDiff.higher}</div>
+                : weekSplit?.weekdayAvg != null && weekSplit?.weekendAvg == null
+                  ? <div className="daynight-diff">No weekend data in period</div>
+                  : weekSplit?.weekendAvg != null && weekSplit?.weekdayAvg == null
+                    ? <div className="daynight-diff">No weekday data in period</div>
+                    : null
+              }
             </div>
           )}
 
@@ -320,7 +338,7 @@ export default function HourlyProfileChart({ homeId, entityId, unit, from, devic
           </span>
           <span className="heatmap-tooltip-value">{fmt(tooltip.val)}</span>
           <span className="heatmap-tooltip-count">
-            {tooltip.count} samples
+            {tooltip.count} {deviceClass === 'energy' ? 'days' : 'readings'}
             {tooltip.otherVal != null && (
               <> · {tooltip.type === 'weekday' ? 'Weekend' : 'Weekday'}: {fmt(tooltip.otherVal)}</>
             )}

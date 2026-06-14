@@ -3,8 +3,10 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { getThresholds } from '../utils/thresholds'
+import { useConfig } from '../hooks/useConfig'
 
 export default function TrendChart({ homeId, entityId, unit, aggPeriod, from, deviceClass }) {
+  const { thresholds: thresholdsData = null } = useConfig()
   const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
@@ -71,7 +73,7 @@ export default function TrendChart({ homeId, entityId, unit, aggPeriod, from, de
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
     // Reference threshold lines
-    const thr = getThresholds(deviceClass)
+    const thr = getThresholds(deviceClass, thresholdsData)
     if (thr) {
       const [yDomMin, yDomMax] = yScale.domain()
       thr.lines.forEach(line => {

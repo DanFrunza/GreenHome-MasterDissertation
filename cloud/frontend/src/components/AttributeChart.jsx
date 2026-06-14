@@ -3,46 +3,109 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { getThresholds } from '../utils/thresholds'
+import { useConfig } from '../hooks/useConfig'
 import InfoTooltip from './InfoTooltip'
 import '../styles/AttributeChart.css'
+import '../styles/Anomalies.css'
 
 const PERIODS = [
-  { key: '1H',  hours: 1,   limit: 1000, fmt: '%H:%M', ticks: 6, agg: null   },
-  { key: '6H',  hours: 6,   limit: 3000, fmt: '%H:%M', ticks: 6, agg: null   },
-  { key: '24H', hours: 24,  limit: null, fmt: '%H:00', ticks: 8, agg: 'hour' },
-  { key: '7D',  hours: 168, limit: null, fmt: '%a %d', ticks: 7, agg: 'hour' },
-  { key: '30D', hours: 720, limit: null, fmt: '%d %b', ticks: 6, agg: 'day'  },
+  { key: '1H',  hours: 1,   limit: 1000, fmt: '%H:%M', ticks: 6, agg: null,   gapMs: 5  * 60 * 1000        },
+  { key: '6H',  hours: 6,   limit: 3000, fmt: '%H:%M', ticks: 6, agg: null,   gapMs: 15 * 60 * 1000        },
+  { key: '24H', hours: 24,  limit: null, fmt: '%H:00', ticks: 8, agg: 'hour', gapMs: 90 * 60 * 1000        },
+  { key: '7D',  hours: 168, limit: null, fmt: '%a %d', ticks: 7, agg: 'hour', gapMs: 90 * 60 * 1000        },
+  { key: '30D', hours: 720, limit: null, fmt: '%d %b', ticks: 6, agg: 'day',  gapMs: 36 * 60 * 60 * 1000  },
 ]
 
-export default function AttributeChart({ homeId, entityId, label, unit, deviceClass }) {
+function insertGaps(data, gapMs) {
+  if (data.length < 2) return data
+  const result = []
+  for (let i = 0; i < data.length; i++) {
+    if (i > 0 && data[i].timestamp - data[i - 1].timestamp > gapMs) {
+      result.push({ timestamp: new Date(data[i - 1].timestamp.getTime() + 1), value: null, min: null, max: null })
+    }
+    result.push(data[i])
+  }
+  return result
+}
+
+export default function AttributeChart({ homeId, entityId, label, unit, deviceClass, externalPeriod = '7D', externalCustomFrom, externalCustomTo, onLocalChange, entityAnomalies }) {
+  const { thresholds: thresholdsData = null } = useConfig()
   const svgRef        = useRef()
   const containerRef  = useRef()
   const zoomScaleRef  = useRef(null)
-  const [period, setPeriod]           = useState('7D')
+  const [period, setPeriod]             = useState(externalPeriod)
   const [measurements, setMeasurements] = useState([])
-  const [loading, setLoading]         = useState(true)
+  const [loading, setLoading]           = useState(true)
+  const [containerWidth, setContainerWidth] = useState(0)
+  const [customFrom, setCustomFrom]     = useState(externalCustomFrom || '')
+  const [customTo,   setCustomTo]       = useState(externalCustomTo   || '')
+  const [showCustom, setShowCustom]     = useState(false)
+  const [inputFrom,  setInputFrom]      = useState('')
+  const [inputTo,    setInputTo]        = useState('')
 
-  const p = PERIODS.find(pp => pp.key === period)
+  useEffect(() => {
+    setPeriod(externalPeriod)
+    if (externalPeriod === 'custom' && externalCustomFrom && externalCustomTo) {
+      setCustomFrom(externalCustomFrom)
+      setCustomTo(externalCustomTo)
+    }
+    setShowCustom(false)
+  }, [externalPeriod, externalCustomFrom, externalCustomTo])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const prevent = e => e.preventDefault()
+    el.addEventListener('wheel', prevent, { passive: false })
+    return () => el.removeEventListener('wheel', prevent)
+  }, [loading])
+
+  const p = (() => {
+    if (period === 'custom' && customFrom && customTo) {
+      const hours = (new Date(customTo) - new Date(customFrom)) / 3600000
+      return {
+        key: 'custom', hours,
+        agg:   hours <= 12 ? null   : hours <= 72 ? 'hour' : 'day',
+        limit: 3000,
+        fmt:   hours <= 24 ? '%H:%M': hours <= 168 ? '%a %d' : '%d %b',
+        ticks: 6,
+        gapMs: hours <= 12 ? 5 * 60 * 1000 : hours <= 72 ? 90 * 60 * 1000 : 36 * 60 * 60 * 1000,
+        fromDate: new Date(customFrom),
+        toDate:   new Date(customTo),
+      }
+    }
+    return PERIODS.find(pp => pp.key === period) ?? PERIODS[3]
+  })()
   const isEnergyDelta = deviceClass === 'energy'
 
   useEffect(() => {
     if (!homeId || !entityId) return
-    const from = new Date(Date.now() - p.hours * 3600 * 1000).toISOString()
+    if (period === 'custom' && (!customFrom || !customTo)) return
+    const fetchFrom = period === 'custom' ? customFrom : new Date(Date.now() - p.hours * 3600 * 1000).toISOString()
+    const toParam   = period === 'custom' ? `&to=${customTo}` : ''
     setLoading(true)
     setMeasurements([])
 
     const url = p.agg
-      ? `${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?period=${p.agg}&from=${from}`
-      : `${API_URL}/homes/${homeId}/entities/${entityId}/measurements?limit=${p.limit}&from=${from}`
+      ? `${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?period=${p.agg}&from=${fetchFrom}${toParam}`
+      : `${API_URL}/homes/${homeId}/entities/${entityId}/measurements?limit=${p.limit || 3000}&from=${fetchFrom}${toParam}`
 
     apiFetch(url)
       .then(r => r.json())
       .then(data => { setMeasurements(data); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, period])
+  }, [homeId, entityId, period, customFrom, customTo])
 
   useEffect(() => {
-    if (!measurements?.length || !svgRef.current || !containerRef.current) return
+    if (!measurements?.length || !svgRef.current || !containerWidth) return
 
     // Normalise both raw and aggregated into the same shape
     // For kWh cumulative sensors (energy device_class): show delta, not absolute value
@@ -66,16 +129,17 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
 
     if (!data.length) return
 
-    const containerWidth = containerRef.current.getBoundingClientRect().width || 600
+    const dataWithGaps = insertGaps(data, p.gapMs)
+
     const margin = { top: 8, right: 16, bottom: 35, left: 45 }
     const width  = containerWidth
     const height = 160
 
-    const now  = new Date()
-    const from = new Date(now - p.hours * 3600 * 1000)
+    const domainEnd   = p.fromDate ? p.toDate   : new Date()
+    const domainStart = p.fromDate ? p.fromDate : new Date(domainEnd - p.hours * 3600 * 1000)
 
     const xScale = d3.scaleTime()
-      .domain([from, now])
+      .domain([domainStart, domainEnd])
       .range([margin.left, width - margin.right])
 
     // Y domain: energy delta always starts at 0; others include band extent
@@ -88,6 +152,7 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
       .range([height - margin.bottom, margin.top])
 
     const makeLine = xS => d3.line()
+      .defined(d => d.value !== null && !isNaN(d.value))
       .x(d => xS(d.timestamp))
       .y(d => yScale(d.value))
       .curve(d3.curveMonotoneX)
@@ -129,7 +194,7 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
       .style('font-size', '9px')
 
     // Reference threshold lines (drawn outside chartGroup so they're not clipped on zoom)
-    const thr = getThresholds(deviceClass)
+    const thr = getThresholds(deviceClass, thresholdsData)
     if (thr) {
       const [yDomMin, yDomMax] = yScale.domain()
       thr.lines.forEach(line => {
@@ -154,10 +219,11 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
     const bandData = data.filter(d => d.min != null && d.max != null && !isNaN(d.min) && !isNaN(d.max))
     if (p.agg && bandData.length) {
       chartGroup.append('path')
-        .datum(bandData)
+        .datum(dataWithGaps)
         .attr('fill', 'var(--accent)')
         .attr('opacity', 0.13)
         .attr('d', d3.area()
+          .defined(d => d.min !== null && !isNaN(d.min))
           .x(d => xScale(d.timestamp))
           .y0(d => yScale(d.min))
           .y1(d => yScale(d.max))
@@ -168,7 +234,7 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
     // Avg / value line
     const linePath = chartGroup.append('path')
       .attr('class', 'chart-line')
-      .datum(data)
+      .datum(dataWithGaps)
       .attr('fill', 'none')
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round')
@@ -243,7 +309,7 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
     // Zoom
     const zoom = d3.zoom()
       .scaleExtent([1, 20])
-      .translateExtent([[xScale(from), 0], [xScale(now), height]])
+      .translateExtent([[xScale(domainStart), 0], [xScale(domainEnd), height]])
       .extent([[margin.left, 0], [width - margin.right, height]])
       .on('zoom', event => {
         const newXS = event.transform.rescaleX(xScale)
@@ -255,14 +321,15 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
         svg.select('.grid-x')
           .call(d3.axisBottom(newXS).ticks(p.ticks).tickSize(height - margin.top - margin.bottom).tickFormat(''))
           .selectAll('line').attr('class', 'grid-line')
-        linePath.attr('d', makeLine(newXS)(data))
+        linePath.attr('d', makeLine(newXS)(dataWithGaps))
         if (p.agg && bandData.length) {
           chartGroup.select('path').attr('d',
             d3.area()
+              .defined(d => d.min !== null && !isNaN(d.min))
               .x(d => newXS(d.timestamp))
               .y0(d => yScale(d.min))
               .y1(d => yScale(d.max))
-              .curve(d3.curveMonotoneX)(bandData)
+              .curve(d3.curveMonotoneX)(dataWithGaps)
           )
         }
       })
@@ -271,7 +338,7 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
     interactRect.on('mousedown.cursor', () => interactRect.style('cursor', 'grabbing'))
     interactRect.on('mouseup.cursor',   () => interactRect.style('cursor', 'grab'))
 
-  }, [measurements, unit, period, deviceClass])
+  }, [measurements, unit, period, deviceClass, containerWidth])
 
   // Header display value
   // Energy delta: show total consumption in the period, not the last absolute reading
@@ -292,6 +359,23 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
       : measurements[0]?.value_numeric
   })()
 
+  const trendInfo = (() => {
+    if (!measurements?.length || measurements.length < 4 || isEnergyDelta) return null
+    const sorted = [...measurements].sort((a, b) => {
+      const ta = p.agg ? new Date(a.period_start) : new Date(a.recorded_at)
+      const tb = p.agg ? new Date(b.period_start) : new Date(b.recorded_at)
+      return ta - tb
+    })
+    const mid = Math.floor(sorted.length / 2)
+    const avg = arr => arr.reduce((s, m) => s + parseFloat(p.agg ? m.avg_value : m.value_numeric), 0) / arr.length
+    const first = avg(sorted.slice(0, mid))
+    const second = avg(sorted.slice(mid))
+    if (!first || isNaN(first) || isNaN(second)) return null
+    const pct = ((second - first) / Math.abs(first)) * 100
+    if (Math.abs(pct) < 2) return null
+    return { up: pct > 0, pct: Math.abs(pct) }
+  })()
+
   const dataInfo = (() => {
     if (loading || !measurements.length) return null
     const n    = measurements.length
@@ -305,6 +389,25 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
       ? `${n} ${buck} averages · shaded band = min–max range`
       : `${n} raw readings`
   })()
+
+  const openCustom = () => {
+    if (!showCustom) {
+      const toDate   = period === 'custom' && customTo   ? customTo   : new Date().toISOString()
+      const fromDate = period === 'custom' && customFrom ? customFrom : new Date(Date.now() - (p?.hours || 168) * 3600000).toISOString()
+      setInputFrom(fromDate.slice(0, 16))
+      setInputTo(toDate.slice(0, 16))
+    }
+    setShowCustom(prev => !prev)
+  }
+
+  const handleApplyCustom = () => {
+    if (!inputFrom || !inputTo || new Date(inputTo) <= new Date(inputFrom)) return
+    setCustomFrom(new Date(inputFrom).toISOString())
+    setCustomTo(new Date(inputTo).toISOString())
+    setPeriod('custom')
+    setShowCustom(false)
+    onLocalChange?.()
+  }
 
   const thr = getThresholds(deviceClass)
 
@@ -339,6 +442,12 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
         <div className="chart-header-left">
           <h4 className="chart-title">
             {label}
+            {entityAnomalies && (entityAnomalies.critical > 0 || entityAnomalies.warning > 0) && (
+              <span
+                className={`anomaly-severity-dot ${entityAnomalies.critical > 0 ? 'critical' : 'warning'}`}
+                title={`${entityAnomalies.critical} critical, ${entityAnomalies.warning} warning in last 7 days`}
+              />
+            )}
             <InfoTooltip>{tooltipContent}</InfoTooltip>
           </h4>
           <span className="chart-value">
@@ -347,6 +456,12 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
                 ? `${latestValue.toFixed(3)} ${unit || ''} consumed`
                 : `${latestValue.toFixed(2)} ${unit || ''}`
               : '—'}
+            {trendInfo && (
+              <span className={`chart-trend ${trendInfo.up ? 'up' : 'down'}`}
+                    title={`${trendInfo.up ? '+' : '-'}${trendInfo.pct.toFixed(0)}% vs first half of period`}>
+                {trendInfo.up ? '↑' : '↓'} {trendInfo.pct.toFixed(0)}%
+              </span>
+            )}
           </span>
         </div>
         <div className="chart-period-selector">
@@ -354,13 +469,32 @@ export default function AttributeChart({ homeId, entityId, label, unit, deviceCl
             <button
               key={pp.key}
               className={`period-btn ${period === pp.key ? 'active' : ''}`}
-              onClick={() => setPeriod(pp.key)}
+              onClick={() => { setPeriod(pp.key); setShowCustom(false); onLocalChange?.() }}
             >
               {pp.key}
             </button>
           ))}
+          <button
+            className={`period-btn ${period === 'custom' || showCustom ? 'active' : ''}`}
+            onClick={openCustom}
+          >
+            Custom
+          </button>
         </div>
       </div>
+
+      {showCustom && (
+        <div className="chart-custom-range">
+          <input type="datetime-local" value={inputFrom} onChange={e => setInputFrom(e.target.value)} />
+          <span className="custom-range-sep">→</span>
+          <input type="datetime-local" value={inputTo} onChange={e => setInputTo(e.target.value)} />
+          <button
+            className="custom-range-apply"
+            onClick={handleApplyCustom}
+            disabled={!inputFrom || !inputTo || new Date(inputTo) <= new Date(inputFrom)}
+          >Apply</button>
+        </div>
+      )}
 
       {dataInfo && <p className="chart-data-info">{dataInfo}</p>}
 

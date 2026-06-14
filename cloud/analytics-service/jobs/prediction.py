@@ -9,7 +9,7 @@ SEASONAL_NAIVE_MAX = 336   # < 2 weeks  -> Seasonal Naive
 RIDGE_MAX          = 1344  # < 8 weeks  -> Ridge Regression with Fourier features
                            # >= 8 weeks -> Random Forest
 
-PREDICTION_HOURS = 168  # 7 days
+PREDICTION_HOURS = 720  # 30 days
 
 
 # ── Feature helpers ───────────────────────────────────────────────────────────

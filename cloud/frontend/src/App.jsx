@@ -3,11 +3,14 @@ import Navbar from './components/Navbar'
 import AppRoutes from './routes'
 import { UserProvider } from './context/UserContext'
 import { HomeProvider } from './context/HomeContext'
+import { ToastProvider } from './context/ToastContext'
+import Toaster from './components/Toaster'
+import ErrorBoundary from './components/ErrorBoundary'
 import './styles/theme.css'
 import './styles/layout.css'
 import './styles/App.css'
 
-const AUTH_PATHS = ['/login', '/register']
+const AUTH_PATHS = ['/login', '/register', '/']
 
 function Layout() {
   const location = useLocation()
@@ -16,6 +19,7 @@ function Layout() {
     <>
       {!isAuth && <Navbar />}
       <AppRoutes />
+      <Toaster />
     </>
   )
 }
@@ -23,11 +27,15 @@ function Layout() {
 function App() {
   return (
     <BrowserRouter>
-      <UserProvider>
-        <HomeProvider>
-          <Layout />
-        </HomeProvider>
-      </UserProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <UserProvider>
+            <HomeProvider>
+              <Layout />
+            </HomeProvider>
+          </UserProvider>
+        </ToastProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

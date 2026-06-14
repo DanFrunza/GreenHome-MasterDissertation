@@ -1,10 +1,125 @@
 .roi-page {
   padding-top: 2rem;
   padding-bottom: 2rem;
-  max-width: 680px;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.roi-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.roi-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.roi-summary {
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.roi-summary-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.roi-summary-empty {
+  margin: 0;
+  font-size: 0.825rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.roi-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.roi-summary-section:last-child { border-bottom: none; padding-bottom: 0; }
+
+.roi-summary-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.roi-summary-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.roi-summary-sub {
+  font-size: 0.775rem;
+  color: var(--muted-foreground);
+}
+
+.roi-summary-missing {
+  color: rgba(234, 179, 8, 0.85);
+}
+
+.roi-summary-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--muted);
+  border-radius: 0.375rem;
+}
+
+.roi-summary-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.825rem;
+  color: var(--muted-foreground);
+}
+
+.roi-summary-result-row strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.roi-summary-result-highlight strong { color: var(--accent); }
+.roi-summary-result-co2 strong       { color: var(--status-online); }
+
+.roi-summary-pending {
+  margin: 0;
+  font-size: 0.775rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+@media (max-width: 860px) {
+  .roi-layout {
+    grid-template-columns: 1fr;
+  }
+  .roi-summary {
+    position: static;
+    order: -1;
+  }
 }
 
 .roi-title {
@@ -19,6 +134,28 @@
   color: var(--muted-foreground);
   font-size: 1rem;
 }
+
+.roi-classify-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.roi-classify-banner-icon { font-size: 1rem; flex-shrink: 0; }
+
+.roi-classify-banner-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.roi-classify-banner-link:hover { text-decoration: underline; }
 
 .roi-card {
   background-color: var(--card);
@@ -181,8 +318,97 @@
 .roi-missing {
   background-color: var(--card);
   border: 1px solid var(--border);
+  border-left: 3px solid rgba(234, 179, 8, 0.65);
   border-radius: 0.5rem;
   padding: 1.25rem 1.5rem;
+}
+
+.roi-missing-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.roi-missing-link:hover { text-decoration: underline; }
+
+.roi-notice.roi-notice-warn {
+  color: #f59e0b;
+  border-left: 3px solid rgba(245, 158, 11, 0.4);
+  padding-left: 0.6rem;
+  font-style: normal;
+}
+
+.roi-results-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.roi-class-best {
+  margin: 0;
+  font-size: 0.825rem;
+  color: var(--status-online);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.roi-result-value.roi-co2-value {
+  color: var(--status-online);
+}
+
+.roi-co2-equiv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 0.375rem;
+}
+
+.roi-co2-equiv-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.roi-co2-equiv-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.roi-co2-equiv-items span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.roi-co2-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.roi-co2-badge--tree   { background: rgba(34, 197, 94, 0.18);  color: #22c55e; }
+.roi-co2-badge--car    { background: rgba(59, 130, 246, 0.18); color: #3b82f6; }
+.roi-co2-badge--flight { background: rgba(139, 92, 246, 0.18); color: #8b5cf6; }
+
+.roi-co2-source {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  font-style: italic;
 }
 
 .roi-missing-title {

@@ -1,39 +1,49 @@
+import time
 import json
 from database import get_connection
 from handlers.automation_handler import handle_automation_discovery
 
 def handle_system(client, home_id, command, payload):
-    if command == "status":
-        _handle_status(client, home_id, payload)
+    if command == "agent_status":
+        _handle_agent_status(client, home_id, payload)
     elif command == "entity_discovery":
         _handle_entity_discovery(home_id, payload)
     elif command == "automation_discovery":
         handle_automation_discovery(home_id, payload)
 
-def _handle_status(client, home_id, payload):
+def _handle_agent_status(client, home_id, payload):
     is_online = payload.strip() == "online"
+    status = 'online' if is_online else 'offline'
 
-    conn = get_connection()
-    cur = conn.cursor()
+    for attempt in range(3):
+        conn = None
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE homes SET agent_status = %s WHERE id = %s",
+                (status, home_id)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            print(f"[AGENT_STATUS] {home_id} → {status}")
+            break
+        except Exception as e:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            if attempt < 2:
+                time.sleep(0.1 * (2 ** attempt))  # 0.1s → 0.2s
+            else:
+                print(f"[ERROR] Could not update agent_status for {home_id} after 3 attempts: {e}")
+                return
 
     if is_online:
-        cur.execute("""
-            UPDATE homes SET status = 'online', last_seen = NOW()
-            WHERE id = %s
-        """, (home_id,))
         client.publish(f"{home_id}/backend/system/entity_discovery", "{}", qos=1)
         client.publish(f"{home_id}/backend/system/automation_discovery", "{}", qos=1)
-        print(f"[STATUS] {home_id} → online, discovery requested")
-    else:
-        cur.execute("""
-            UPDATE homes SET status = 'offline'
-            WHERE id = %s
-        """, (home_id,))
-        print(f"[STATUS] {home_id} → offline")
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
 def _handle_entity_discovery(home_id, payload):
     try:
@@ -57,7 +67,7 @@ def _handle_entity_discovery(home_id, payload):
         cur.execute("""
             INSERT INTO entities
                 (entity_id, home_id, device_id, domain, friendly_name, unit, device_class, state, available, last_seen)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, true, NOW())
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             ON CONFLICT (home_id, entity_id) DO UPDATE SET
                 device_id     = EXCLUDED.device_id,
                 domain        = EXCLUDED.domain,
@@ -65,8 +75,10 @@ def _handle_entity_discovery(home_id, payload):
                 unit          = EXCLUDED.unit,
                 device_class  = EXCLUDED.device_class,
                 state         = EXCLUDED.state,
-                available     = true,
+                available     = EXCLUDED.available,
                 last_seen     = NOW()
+                -- anomaly_muted și anomaly_suppressed sunt setate de utilizator,
+                -- nu se resetează la discovery
         """, (
             entity["entity_id"],
             home_id,
@@ -76,6 +88,7 @@ def _handle_entity_discovery(home_id, payload):
             entity.get("unit_of_measurement"),
             entity.get("device_class"),
             entity.get("state"),
+            entity.get("available", True),
         ))
 
     conn.commit()

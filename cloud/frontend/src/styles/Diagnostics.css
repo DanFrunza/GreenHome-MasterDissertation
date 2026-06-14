@@ -1,5 +1,23 @@
+/* ── Sticky period bar ───────────────────────────────────────────────────── */
+
+.diag-period-bar {
+  position: sticky;
+  top: 70px;
+  z-index: 20;
+  background: var(--background);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0 0.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .diag-page-header {
-  margin-bottom: 2rem;
+  padding-top: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .diag-title {
@@ -68,6 +86,31 @@
   white-space: nowrap;
 }
 
+.diag-alert-badge.ok {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--status-online);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.diag-alert-badge.muted {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.diag-alert-badge.suppressed {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.diag-mgmt-header-badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
 .diag-fault-groups {
   display: flex;
   flex-direction: column;
@@ -122,10 +165,46 @@
 .diag-fault-dot.triggered { background: #ef4444; }
 .diag-fault-dot.ok         { background: var(--status-online); }
 
-.diag-fault-name {
+.diag-fault-main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.diag-fault-name {
   font-size: 0.875rem;
   color: var(--foreground);
+}
+
+.diag-fault-history {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.diag-fault-history-label {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.diag-fault-event {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.4rem;
+  white-space: nowrap;
+}
+
+.diag-fault-history-none {
+  font-size: 0.7rem;
+  color: var(--status-online);
+  font-style: italic;
 }
 
 .diag-fault-status {
@@ -156,9 +235,9 @@
   overflow: hidden;
 }
 
-.diag-health-device.has-issues {
-  border-color: rgba(245, 158, 11, 0.4);
-}
+.diag-health-device.has-critical { border-left: 3px solid #ef4444; }
+.diag-health-device.has-warning  { border-left: 3px solid #f59e0b; }
+.diag-health-device.has-ok       { border-left: 3px solid var(--status-online); }
 
 .diag-health-device-header {
   display: flex;
@@ -168,6 +247,67 @@
   padding: 0.6rem 0.875rem;
   background: var(--muted);
   border-bottom: 1px solid var(--border);
+}
+
+.diag-health-device-toggle {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  outline: none;
+}
+
+.diag-health-device-toggle:hover {
+  background: color-mix(in srgb, var(--muted) 70%, var(--border) 30%);
+}
+
+.diag-health-device-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.diag-health-device-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.diag-health-issue-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.diag-health-issue-badge.critical {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.diag-health-issue-badge.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.diag-health-issue-badge.ok {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--status-online);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.diag-health-chevron {
+  font-size: 0.6rem;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.diag-health-device-body {
+  display: flex;
+  flex-direction: column;
 }
 
 .diag-health-device-name {
@@ -224,6 +364,81 @@
 .diag-health-insight.warning  { background: rgba(245, 158, 11, 0.05); }
 .diag-health-insight.critical { background: rgba(239, 68, 68, 0.05); }
 
+.diag-health-insight-collapsible {
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.diag-health-insight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.875rem;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background 0.12s;
+}
+
+.diag-health-insight-collapsible.warning .diag-health-insight-header:hover  { background: rgba(245, 158, 11, 0.1); }
+.diag-health-insight-collapsible.critical .diag-health-insight-header:hover { background: rgba(239, 68, 68, 0.1); }
+
+.diag-health-insight-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.diag-health-insight-header .diag-health-dot {
+  margin-top: 0;
+}
+
+.diag-health-insight-chevron {
+  font-size: 0.55rem;
+  color: var(--muted-foreground);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.diag-health-insight-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0 0.875rem 0.75rem calc(0.875rem + 8px + 0.65rem);
+}
+
+.diag-health-period-activity {
+  padding: 0.65rem 0.875rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.diag-health-period-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.diag-health-period-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.diag-health-period-item {
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.diag-health-period-item:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
 .diag-health-dot {
   width: 8px;
   height: 8px;
@@ -234,12 +449,6 @@
 
 .diag-health-dot.warning  { background: #f59e0b; }
 .diag-health-dot.critical { background: #ef4444; }
-
-.diag-health-insight-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
 
 .diag-health-insight-title {
   font-size: 0.875rem;
@@ -252,4 +461,175 @@
   font-size: 0.8rem;
   color: var(--muted-foreground);
   line-height: 1.5;
+}
+
+.diag-health-insight-link {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.diag-health-insight-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Load more row ───────────────────────────────────────────────────────── */
+
+.diag-load-more-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.diag-load-more-hint {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+
+/* ── Anomaly Management card ─────────────────────────────────────────────── */
+
+.diag-mgmt-search {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.diag-mgmt-search:focus {
+  border-color: var(--accent);
+}
+
+.diag-mgmt-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.diag-mgmt-header-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diag-mgmt-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+
+.diag-mgmt-row:last-child {
+  border-bottom: none;
+}
+
+.diag-mgmt-row:hover {
+  background: var(--muted);
+}
+
+.diag-mgmt-row.is-muted {
+  opacity: 0.65;
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.diag-mgmt-row.is-suppressed {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.diag-mgmt-col-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.diag-mgmt-device {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diag-mgmt-entity {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diag-mgmt-col-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.diag-mgmt-hint {
+  font-size: 0.65rem;
+  color: var(--muted-foreground);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.diag-mgmt-toggle {
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  min-width: 48px;
+}
+
+.diag-mgmt-toggle:hover:not(:disabled) {
+  border-color: var(--foreground);
+  color: var(--foreground);
+}
+
+.diag-mgmt-toggle.active.suppressed {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.diag-mgmt-toggle.active.muted {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.diag-mgmt-toggle:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }

@@ -1,14 +1,17 @@
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import '../styles/Home.css'
 import '../styles/Anomalies.css'
 import { useHome } from '../context/HomeContext'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useUser } from '../context/UserContext'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { getAllTips } from '../utils/recommendations'
 import { inferDeviceName } from '../utils/deviceUtils'
+import { formatSensorValue } from '../utils/formatValue'
 import { useDismissedAnomalies } from '../hooks/useDismissedAnomalies'
+import { useConfig } from '../hooks/useConfig'
 
 const WEEK_AGO = () => new Date(Date.now() - 7 * 86400 * 1000).toISOString()
 const TIP_INTERVAL = 9000
@@ -17,7 +20,6 @@ function AnomaliesCard({ homeId }) {
   const [anomalies, setAnomalies]       = useState(null)
   const [loading, setLoading]           = useState(true)
   const [expandedDays, setExpandedDays] = useState({})
-  const navigate = useNavigate()
   const { dismissed, dismiss } = useDismissedAnomalies(homeId)
 
   useEffect(() => {
@@ -31,7 +33,7 @@ function AnomaliesCard({ homeId }) {
 
   if (loading) return null
 
-  const active = (anomalies || []).filter(a => !dismissed.has(a.id))
+  const active = (anomalies || []).filter(a => !dismissed.has(a.id) && !a.anomaly_suppressed && !a.anomaly_muted)
   if (!active.length) return null
 
   const today     = new Date().toLocaleDateString()
@@ -85,16 +87,17 @@ function AnomaliesCard({ homeId }) {
               <div className="anomaly-day-content">
                 <div className="anomalies-list">
                   {groups[day].map(a => (
-                    <div
-                      key={a.id}
-                      className="anomaly-row anomaly-row-link"
-                      onClick={() => navigate(`/statistics?entity=${a.entity_id}`)}
-                    >
+                    <div key={a.id} className="anomaly-row">
                       <div className={`anomaly-severity-dot ${a.severity}`} />
                       <div className="anomaly-row-main">
                         <span className="anomaly-entity-name">{a.friendly_name || a.entity_id}</span>
                         <span className="anomaly-row-baseline">
-                          value {parseFloat(a.value).toFixed(2)}{a.unit ? ` ${a.unit}` : ''} · z-score {parseFloat(a.z_score).toFixed(1)}
+                          value {formatSensorValue(a.value, a.device_class)}{a.unit ? ` ${a.unit}` : ''} · z-score {parseFloat(a.z_score).toFixed(2)}
+                        </span>
+                        <span className="anomaly-row-actions">
+                          <Link to={`/statistics?entity=${a.entity_id}`} className="anomaly-action-link" onClick={e => e.stopPropagation()}>Statistics</Link>
+                          <span className="anomaly-action-sep">·</span>
+                          <Link to={`/diagnostics?entity=${a.entity_id}`} className="anomaly-action-link" onClick={e => e.stopPropagation()}>Diagnostics</Link>
                         </span>
                       </div>
                       <span className="anomaly-row-time">{new Date(a.detected_at).toLocaleTimeString()}</span>
@@ -118,7 +121,9 @@ function AnomaliesCard({ homeId }) {
 function TipsCard({ homeId }) {
   const [tips, setTips] = useState([])
   const [index, setIndex] = useState(0)
+  const [hasUnclassified, setHasUnclassified] = useState(false)
   const timerRef = useRef(null)
+  const { recommendations: recommendationsData } = useConfig()
 
   useEffect(() => {
     if (!homeId) return
@@ -126,10 +131,13 @@ function TipsCard({ homeId }) {
       apiFetch(`${API_URL}/homes/${homeId}/devices`).then(r => r.json()),
       apiFetch(`${API_URL}/homes/${homeId}/config`).then(r => r.json()).catch(() => null),
     ]).then(([devices, tariff]) => {
-      setTips(getAllTips(devices.map(d => ({ ...d, name: inferDeviceName(d.entities) })), tariff))
+      const mapped = devices.map(d => ({ ...d, name: inferDeviceName(d.entities) }))
+      const generated = getAllTips(mapped, tariff, recommendationsData)
+      setTips(generated)
       setIndex(0)
+      setHasUnclassified(devices.length > 0 && generated.length === 0)
     }).catch(() => {})
-  }, [homeId])
+  }, [homeId, recommendationsData])
 
   useEffect(() => {
     if (tips.length < 2) return
@@ -143,7 +151,19 @@ function TipsCard({ homeId }) {
     timerRef.current = setInterval(() => setIndex(i => (i + 1) % tips.length), TIP_INTERVAL)
   }
 
-  if (!tips.length) return null
+  if (!tips.length) {
+    if (!hasUnclassified) return null
+    return (
+      <div className="tips-card tips-card-classify">
+        <div className="tips-classify-icon">💡</div>
+        <p className="tips-classify-title">Unlock personalised recommendations</p>
+        <p className="tips-classify-body">
+          Classify your devices with an appliance type and energy class to receive energy-saving tips tailored to your home.
+        </p>
+        <a href="/devices" className="tips-classify-link">Go to Devices →</a>
+      </div>
+    )
+  }
   const tip = tips[index]
 
   return (
@@ -152,6 +172,7 @@ function TipsCard({ homeId }) {
         <div className="tips-meta">
           <span className="tips-device">{tip.deviceName}</span>
           <span className="tips-category">{tip.category}</span>
+          {tip.impact && <span className={`tips-impact tips-impact-${tip.impact}`}>{tip.impact}</span>}
         </div>
         {tips.length > 1 && (
           <div className="tips-nav">
@@ -178,6 +199,7 @@ function TipsCard({ homeId }) {
 }
 
 export default function Home() {
+  usePageTitle()
   const { user } = useUser()
   const { homes, selectedHome, setSelectedHome, loading } = useHome()
   const displayName = user?.display_name || user?.username || ''
@@ -257,10 +279,18 @@ export default function Home() {
                 onClick={() => setSelectedHome(home)}
               >
                 <div className="home-card-left">
-                  <div
-                    className="home-card-status-dot"
-                    style={{ backgroundColor: home.status === 'online' ? 'var(--status-online)' : 'var(--status-offline)' }}
-                  />
+                  <span className="home-card-dots">
+                    <div
+                      className="home-card-status-dot"
+                      style={{ backgroundColor: home.status === 'online' ? 'var(--status-online)' : 'var(--status-offline)' }}
+                    />
+                    {home.agent_status === 'offline' && (
+                      <span
+                        className="agent-offline-icon"
+                        title="Local agent offline — commands may not work"
+                      />
+                    )}
+                  </span>
                   <div>
                     <div className="home-card-name">{home.name || home.id}</div>
                     <div className="home-card-id">{home.id}</div>

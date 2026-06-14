@@ -22,11 +22,12 @@ services:
       - HOME_ID=${HOME_ID}
       - MQTT_CLOUD_HOST=${MQTT_CLOUD_HOST}
       - MQTT_CLOUD_PORT=${MQTT_CLOUD_PORT}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
     volumes:
       - ./mqtt-local/mosquitto-local.conf.template:/mosquitto/config/mosquitto.conf.template:ro
       - ./mqtt-local/data:/mosquitto/data
     entrypoint: >
-      sh -c "sed 's|HOME_ID|$HOME_ID|g; s|MQTT_CLOUD_HOST|$MQTT_CLOUD_HOST|g; s|MQTT_CLOUD_PORT|$MQTT_CLOUD_PORT|g'
+      sh -c "sed 's|HOME_ID|$HOME_ID|g; s|MQTT_CLOUD_HOST|$MQTT_CLOUD_HOST|g; s|MQTT_CLOUD_PORT|$MQTT_CLOUD_PORT|g; s|MQTT_PASSWORD|$MQTT_PASSWORD|g'
       /mosquitto/config/mosquitto.conf.template > /mosquitto/config/mosquitto.conf
       && mosquitto -c /mosquitto/config/mosquitto.conf"
     restart: unless-stopped
@@ -64,3 +65,10 @@ services:
     depends_on:
       - mqtt-local
     restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

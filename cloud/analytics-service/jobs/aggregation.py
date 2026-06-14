@@ -39,6 +39,29 @@ def run_aggregation(conn):
                 computed_at = EXCLUDED.computed_at
         """, (p["name"], p["trunc"], since, p["trunc"]))
 
+        # NULL out min/max for periods that contain a meter reset — delta (max-min) would be
+        # corrupted since the meter restarts from 0 mid-period
+        cur.execute("""
+            UPDATE aggregations a
+            SET min_value = NULL, max_value = NULL
+            WHERE a.period = %s
+              AND a.period_start >= %s
+              AND EXISTS (
+                  SELECT 1 FROM meter_resets mr
+                  WHERE mr.home_id  = a.home_id
+                    AND mr.entity_id = a.entity_id
+                    AND mr.reset_at >= a.period_start
+                    AND mr.reset_at < a.period_start + (
+                        CASE a.period
+                          WHEN 'hour'  THEN INTERVAL '1 hour'
+                          WHEN 'day'   THEN INTERVAL '1 day'
+                          WHEN 'week'  THEN INTERVAL '1 week'
+                          WHEN 'month' THEN INTERVAL '1 month'
+                        END
+                    )
+              )
+        """, (p["name"], since))
+
     conn.commit()
     cur.close()
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Aggregation done")

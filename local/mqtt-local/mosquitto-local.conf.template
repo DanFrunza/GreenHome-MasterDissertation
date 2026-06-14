@@ -7,8 +7,11 @@ allow_anonymous true
 
 connection cloud
 address MQTT_CLOUD_HOST:MQTT_CLOUD_PORT
+remote_username HOME_ID
+remote_password MQTT_PASSWORD
 try_private false
 start_type automatic
+restart_timeout 5
 cleansession true
 bridge_attempt_unsubscribe false
 

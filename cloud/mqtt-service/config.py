@@ -3,6 +3,8 @@ import os
 # MQTT
 CLOUD_BROKER = os.getenv("MQTT_CLOUD_HOST", "mqtt-cloud")
 CLOUD_PORT = int(os.getenv("MQTT_CLOUD_PORT", 1883))
+MQTT_SERVICE_USER = os.getenv("MQTT_SERVICE_USER", "mqtt-service")
+MQTT_SERVICE_PASSWORD = os.getenv("MQTT_SERVICE_PASSWORD", "")
 
 # PostgreSQL
 DB_HOST = os.getenv("DB_HOST", "postgres-db")

@@ -3,25 +3,47 @@ import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
 import { HOUR_LABELS } from '../utils/chartUtils'
+import { formatSensorValue } from '../utils/formatValue'
 
-const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+// Săptămâna începe luni (standard EU/ISO)
+const DOW_ORDER  = [1, 2, 3, 4, 5, 6, 0]
+const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass }) {
-  const svgRef    = useRef()
+function isPeakHour(h, tariff) {
+  if (!tariff?.peak_start || !tariff?.peak_end) return false
+  const s = parseInt(tariff.peak_start.slice(0, 2))
+  const e = parseInt(tariff.peak_end.slice(0, 2))
+  return e > s ? h >= s && h < e : h >= s || h < e
+}
+
+export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceClass, tariff }) {
+  const svgRef       = useRef()
   const containerRef = useRef()
   const wrapperRef   = useRef()
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(true)
-  const [tooltip, setTooltip] = useState(null)
+  const [data, setData]                   = useState([])
+  const [loading, setLoading]             = useState(true)
+  const [tooltip, setTooltip]             = useState(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
+  // ResizeObserver — rulează și când loading devine false (atunci apare containerRef în DOM)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver(entries => setContainerWidth(entries[0].contentRect.width))
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [loading])
+
+  // Fetch date
   useEffect(() => {
     if (!homeId || !entityId) return
     setLoading(true)
+    setData([])
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
 
     if (deviceClass === 'energy') {
       const params = new URLSearchParams({ period: 'hour' })
       if (from) params.set('from', from)
+      if (to)   params.set('to', to)
       apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/aggregations?${params}`)
         .then(r => r.json())
         .then(rows => {
@@ -33,7 +55,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
               timeZone: tz, year: 'numeric', month: 'numeric',
               day: 'numeric', hour: 'numeric', hour12: false,
             }).formatToParts(new Date(r.period_start))
-            const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0')
+            const get  = t => parseInt(parts.find(p => p.type === t)?.value ?? '0')
             const hour = get('hour') % 24
             const dow  = new Date(get('year'), get('month') - 1, get('day')).getDay()
             const key  = `${dow}_${hour}`
@@ -42,12 +64,11 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
             grid[key].count++
           })
           const cells = []
-          for (let dow = 0; dow < 7; dow++) {
+          for (let dow = 0; dow < 7; dow++)
             for (let hour = 0; hour < 24; hour++) {
               const cell = grid[`${dow}_${hour}`]
               cells.push({ dow, hour, avg_value: cell ? cell.sum / cell.count : null, count: cell?.count ?? 0 })
             }
-          }
           setData(cells)
           setLoading(false)
         })
@@ -57,19 +78,20 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
 
     const params = new URLSearchParams({ tz })
     if (from) params.set('from', from)
+    if (to)   params.set('to', to)
     apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/heatmap?${params}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [homeId, entityId, from, deviceClass])
+  }, [homeId, entityId, from, to, deviceClass])
 
+  // Draw cu D3
   useEffect(() => {
-    if (!data.length || !svgRef.current || !containerRef.current) return
+    if (!data.length || !svgRef.current || !containerRef.current || !containerWidth) return
     const filled = data.filter(d => d.avg_value != null)
     if (!filled.length) return
 
-    const containerWidth = containerRef.current.getBoundingClientRect().width || 600
-    const margin = { top: 8, right: 16, bottom: 52, left: 36 }
+    const margin = { top: 8, right: 16, bottom: 64, left: 40 }
     const width  = containerWidth
     const cellW  = (width - margin.left - margin.right) / 24
     const cellH  = 30
@@ -81,17 +103,35 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
 
     const minVal = d3.min(filled, d => d.avg_value)
     const maxVal = d3.max(filled, d => d.avg_value)
+    // Guard: dacă toate valorile sunt identice, domain([x,x]) produce NaN în colorScale
+    const domainMin = maxVal - minVal < 1e-10 ? minVal - 1 : minVal
+    const domainMax = maxVal - minVal < 1e-10 ? maxVal + 1 : maxVal
     const colorScale = d3.scaleSequential()
-      .domain([minVal, maxVal])
-      .interpolator(t => d3.interpolateBlues(0.12 + t * 0.88))
+      .domain([domainMin, domainMax])
+      .interpolator(t => d3.interpolateBlues(0.15 + t * 0.85))
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
 
-    g.selectAll('rect')
+    // Fundal peak hours (bandă verticală subtilă)
+    const hasPeak = tariff?.peak_start && tariff?.peak_end
+    if (hasPeak) {
+      for (let h = 0; h < 24; h++) {
+        if (isPeakHour(h, tariff)) {
+          g.append('rect')
+            .attr('x', h * cellW).attr('y', 0)
+            .attr('width', cellW).attr('height', cellH * 7)
+            .attr('fill', 'rgba(245,158,11,0.07)')
+            .attr('pointer-events', 'none')
+        }
+      }
+    }
+
+    // Celule
+    g.selectAll('rect.cell')
       .data(data)
-      .join('rect')
+      .join(enter => enter.append('rect').attr('class', 'cell'))
       .attr('x', d => d.hour * cellW + 1)
-      .attr('y', d => d.dow  * cellH + 1)
+      .attr('y', d => DOW_ORDER.indexOf(d.dow) * cellH + 1)
       .attr('width',  cellW - 2)
       .attr('height', cellH - 2)
       .attr('rx', 3)
@@ -107,32 +147,41 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
       })
       .on('mouseleave', () => setTooltip(null))
 
-    // y-axis — day labels
+    // Separator weekday / weekend — linie punctată între Vineri (row 4) și Sâmbătă (row 5)
+    g.append('line')
+      .attr('x1', 0).attr('y1', cellH * 5)
+      .attr('x2', cellW * 24).attr('y2', cellH * 5)
+      .attr('stroke', 'var(--border)').attr('stroke-width', 2)
+      .attr('stroke-dasharray', '4,3')
+      .attr('pointer-events', 'none')
+
+    // Etichete y (zile) — weekend cu accent
     DOW_LABELS.forEach((label, i) => {
       svg.append('text')
         .attr('x', margin.left - 6)
         .attr('y', margin.top + i * cellH + cellH / 2)
         .attr('text-anchor', 'end')
         .attr('dominant-baseline', 'middle')
-        .attr('fill', 'var(--muted-foreground)')
+        .attr('fill', i >= 5 ? 'var(--accent)' : 'var(--muted-foreground)')
         .attr('font-size', '0.72rem')
+        .attr('font-weight', i >= 5 ? '600' : 'normal')
         .text(label)
     })
 
-    // x-axis — every 3 hours
+    // Etichete x (ore) — peak cu accent dacă tariful e configurat
     const xG = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top + cellH * 7 + 10})`)
     ;[0, 3, 6, 9, 12, 15, 18, 21].forEach(h => {
       xG.append('text')
         .attr('x', h * cellW + cellW / 2)
         .attr('text-anchor', 'middle')
-        .attr('fill', 'var(--muted-foreground)')
+        .attr('fill', hasPeak && isPeakHour(h, tariff) ? 'rgba(245,158,11,0.9)' : 'var(--muted-foreground)')
         .attr('font-size', '0.72rem')
         .text(HOUR_LABELS[h])
     })
 
-    // color legend
-    const legendW = Math.min(220, width - margin.left - margin.right)
+    // ── Legendă ──────────────────────────────────────────────────────────
+    const legendW = Math.max(60, Math.min(200, width - margin.left - margin.right - 120))
     const legendH = 8
     const legendY = margin.top + cellH * 7 + 28
 
@@ -146,18 +195,46 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
       .attr('width', legendW).attr('height', legendH)
       .attr('rx', 3).attr('fill', `url(#${gradId})`)
 
-    const fmt = v => `${d3.format('.2~f')(v)}${unit ? ` ${unit}` : ''}`
-    svg.append('text')
-      .attr('x', margin.left).attr('y', legendY + legendH + 13)
-      .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
-      .text(fmt(minVal))
-    svg.append('text')
-      .attr('x', margin.left + legendW).attr('y', legendY + legendH + 13)
-      .attr('text-anchor', 'end')
-      .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
-      .text(fmt(maxVal))
+    const fmtLeg = v => `${formatSensorValue(v, deviceClass)}${unit ? ` ${unit}` : ''}`
+    ;[
+      { x: margin.left,              anchor: 'start', val: minVal },
+      { x: margin.left + legendW / 2, anchor: 'middle', val: (minVal + maxVal) / 2 },
+      { x: margin.left + legendW,    anchor: 'end',   val: maxVal },
+    ].forEach(({ x, anchor, val }) => {
+      svg.append('text')
+        .attr('x', x).attr('y', legendY + legendH + 13)
+        .attr('text-anchor', anchor)
+        .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
+        .text(fmtLeg(val))
+    })
 
-  }, [data, unit])
+    // Indicator „No data"
+    const ndX = margin.left + legendW + 14
+    svg.append('rect')
+      .attr('x', ndX).attr('y', legendY)
+      .attr('width', 16).attr('height', legendH)
+      .attr('rx', 2).attr('fill', 'var(--muted)')
+    svg.append('text')
+      .attr('x', ndX + 20).attr('y', legendY + legendH / 2)
+      .attr('dominant-baseline', 'middle')
+      .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
+      .text('No data')
+
+    // Indicator „Peak hours" (dacă există)
+    if (hasPeak) {
+      const pkX = ndX + 72
+      svg.append('rect')
+        .attr('x', pkX).attr('y', legendY)
+        .attr('width', 16).attr('height', legendH)
+        .attr('rx', 2).attr('fill', 'rgba(245,158,11,0.3)')
+      svg.append('text')
+        .attr('x', pkX + 20).attr('y', legendY + legendH / 2)
+        .attr('dominant-baseline', 'middle')
+        .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
+        .text('Peak hours')
+    }
+
+  }, [data, unit, deviceClass, tariff, containerWidth])
 
   if (loading) return <p className="stats-loading">Loading...</p>
   if (!data.filter(d => d.avg_value != null).length)
@@ -166,15 +243,18 @@ export default function HeatmapChart({ homeId, entityId, unit, from, deviceClass
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
       <div ref={containerRef} style={{ width: '100%' }}>
-        <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+        <svg ref={svgRef} style={{ display: 'block' }} />
       </div>
       {tooltip && (
-        <div className="heatmap-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y - 10 }}>
+        <div className="heatmap-tooltip" style={{
+          left: tooltip.x + 14 + 150 > containerWidth ? Math.max(0, tooltip.x - 164) : tooltip.x + 14,
+          top:  tooltip.y - 10,
+        }}>
           <span className="heatmap-tooltip-label">
-            {DOW_LABELS[tooltip.d.dow]}, {HOUR_LABELS[tooltip.d.hour]}
+            {DOW_LABELS[DOW_ORDER.indexOf(tooltip.d.dow)]}, {HOUR_LABELS[tooltip.d.hour]}
           </span>
           <span className="heatmap-tooltip-value">
-            {Number(tooltip.d.avg_value).toFixed(2)}{unit ? ` ${unit}` : ''}
+            {formatSensorValue(tooltip.d.avg_value, deviceClass)}{unit ? ` ${unit}` : ''}
           </span>
           <span className="heatmap-tooltip-count">{tooltip.d.count} samples</span>
         </div>

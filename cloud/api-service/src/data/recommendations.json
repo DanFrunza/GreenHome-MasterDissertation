@@ -1,0 +1,662 @@
+{
+  "washing_machine": {
+    "energy": [
+      {
+        "title": "Shift cycles to off-peak hours and wash at lower temperatures",
+        "body": "Heating water accounts for 80–90% of a washing machine's energy use per cycle. Switching from 60°C to 30°C saves up to 60% of the cycle's energy with no meaningful difference in cleaning performance for lightly soiled loads. Always run with a full load — half-loads waste water and electricity.\n\nShifting your cycles to off-peak hours reduces the cost per cycle significantly.",
+        "impact": "high",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 1.5, "units_per_month": 15 },
+        "automation_hint": "Use a smart plug with a time-based HA automation to start the machine after off-peak hours begin — check your tariff for the exact time."
+      },
+      {
+        "title": "Use cold pre-wash and eco programmes for lightly soiled loads",
+        "body": "Many modern washing machines include an eco programme that extends cycle time but significantly reduces water temperature and therefore energy use. For everyday clothes that are not heavily soiled, a 20°C or cold wash with a quality detergent is sufficient and reduces energy consumption by up to 80% compared to a 60°C cycle. Enzyme-based detergents are specifically formulated to work effectively at low temperatures.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Remove laundry promptly to prevent mold and bacteria buildup",
+        "body": "Leaving wet laundry in a closed drum for more than 1–2 hours creates ideal conditions for mold and bacteria to proliferate. The resulting musty odour comes from microbial colonies established on the fabric — removing it will require rewashing. More importantly, mold spores and bacteria released when the drum is opened or during subsequent drying can irritate the respiratory tract, particularly in people with asthma or mold allergies.\n\nRun a drum-cleaning cycle with a dedicated cleaner or at 90°C every 1–2 months to prevent buildup inside the machine. Leave the door and detergent drawer ajar between washes to allow the drum to dry out.",
+        "impact": "medium",
+        "automation_hint": "Set up a HA automation that notifies you when the washing machine's power consumption drops to near zero — a reliable indicator that the cycle has ended."
+      }
+    ]
+  },
+
+  "dishwasher": {
+    "energy": [
+      {
+        "title": "Schedule during off-peak hours and use eco mode",
+        "body": "Most modern dishwashers have a delayed start feature — use it to schedule cycles overnight. The eco programme uses less water and lower temperatures, reducing energy use by 20–40% compared to intensive cycles. Only run when fully loaded — a half-loaded dishwasher uses nearly as much water and energy as a full one.",
+        "impact": "high",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 1.2, "units_per_month": 20 },
+        "automation_hint": "Connect your dishwasher to a smart plug and use a time-based HA automation to schedule it during off-peak hours."
+      }
+    ],
+    "health": [
+      {
+        "title": "Allow the interior to dry fully after each cycle to prevent mold",
+        "body": "The warm, humid interior of a dishwasher is an ideal environment for mold and bacteria if left closed after a cycle ends. Once the programme finishes, open the door fully for at least 30 minutes to allow steam and residual moisture to escape. Many dishwashers have an auto-open or airing function — enable it if available.\n\nDetergent residue on dishes is rare with modern formulations and correct dosing, but using excessive detergent or a programme that is too short for the load can leave chemical traces. Use the amount recommended by the manufacturer and avoid overfilling.",
+        "impact": "low",
+        "automation_hint": "A power-monitoring smart plug can detect when the cycle ends and trigger a notification or turn on a ventilation fan nearby."
+      }
+    ]
+  },
+
+  "dryer": {
+    "energy": [
+      {
+        "title": "Clean the filter before every cycle and schedule during off-peak hours",
+        "body": "Dryers are among the highest-consuming household appliances, using 2–4 kWh per cycle. A clogged lint filter increases drying time and energy use by 20–30% — clean it before every cycle. If available, use a sensor-dry programme instead of timed drying to stop automatically when clothes are dry, avoiding over-running.\n\nShifting cycles to off-peak hours reduces cost per cycle significantly.",
+        "impact": "high",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 2.5, "units_per_month": 10 },
+        "automation_hint": "A smart plug with energy monitoring can alert you when the dryer finishes and schedule cycles during off-peak hours."
+      },
+      {
+        "title": "Spin laundry at high speed before drying to reduce drying time",
+        "body": "The mechanical extraction of water during the washing machine's spin cycle is far more energy-efficient than evaporating it in a dryer. Increasing the spin speed from 800 to 1400 RPM removes significantly more water, reducing dryer runtime by 10–20 minutes per load. Most modern fabrics tolerate high spin speeds without damage — check the garment label.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Clean the lint filter before every cycle — clogged filters are a fire hazard",
+        "body": "Lint accumulation in the filter and exhaust duct is the leading cause of dryer fires in residential properties. A full filter not only increases fire risk but also forces the heating element to cycle longer at higher temperatures, accelerating wear. Clean the filter before every cycle without exception, and inspect and clean the exhaust duct at least once a year.\n\nVented dryers expel hot, humid air — ensure the vent exits outside the building and is not blocked, partially crushed, or venting into a wall cavity. Blocked or indoor venting raises indoor humidity significantly and creates conditions for mold in the surrounding structure.",
+        "impact": "high",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "fridge": {
+    "energy": [
+      {
+        "title": "Placement and maintenance reduce consumption by up to 30%",
+        "body": "A refrigerator placed next to an oven, dishwasher, or in direct sunlight must work significantly harder to maintain temperature — increasing consumption by 10–20%. Leave at least 10 cm of clearance on the sides and back for heat dissipation.\n\nDust on the condenser coils (usually at the back or bottom) forces the compressor to run longer — cleaning them once a year can reduce energy use by up to 30%. Check door seals regularly: a damaged seal lets cold air escape continuously, adding 5–15% to consumption. A full fridge retains cold better than an empty one.",
+        "impact": "medium",
+        "automation_hint": null
+      },
+      {
+        "title": "Set the fridge to 5°C and freezer to -18°C for optimal efficiency",
+        "body": "Many households set their fridge to 3°C or lower out of caution, but 5°C is the recommended maximum for food safety and is significantly more efficient. Every degree below 5°C increases energy consumption by approximately 5%. The freezer should be at -18°C — colder settings increase consumption without any benefit to food preservation.\n\nIf your fridge has a temperature sensor entity in Home Assistant, monitor it to confirm the actual compartment temperature matches the thermostat setting.",
+        "impact": "medium",
+        "automation_hint": "If your fridge has a temperature sensor, create an alert automation in HA to notify you if the fridge temperature rises above 6°C — an early warning for door seal failures or compressor issues."
+      }
+    ],
+    "health": [
+      {
+        "title": "Correct fridge temperature prevents foodborne illness",
+        "body": "The refrigerator compartment should be kept between 1°C and 4°C. Above 4°C, bacteria such as Listeria, Salmonella, and E. coli multiply rapidly — doubling in population every 20 minutes in some cases. Many households set the thermostat too high (5–8°C), often without realising it, as fridge dials are typically labelled 1–5 rather than in degrees.\n\nThe freezer should be at or below -18°C. Warmer temperatures do not kill bacteria but slow their growth — a brief temperature rise from a door left open longer than necessary is enough to restart multiplication on thawed or semi-thawed food.",
+        "impact": "high",
+        "automation_hint": "If your fridge has a temperature sensor entity, set up an HA automation to notify you if the temperature exceeds 5°C for more than 30 minutes."
+      }
+    ]
+  },
+
+  "boiler": {
+    "energy": [
+      {
+        "title": "Heat water during off-peak hours and optimise the setpoint",
+        "body": "Scheduling the boiler to heat water during off-peak hours ensures hot water is available in the morning at the lowest possible cost. Every 10°C reduction in setpoint temperature saves approximately 6% in energy — but do not set it below 60°C (see the health note). Insulating the boiler tank and hot water pipes reduces heat loss and reheating frequency.",
+        "impact": "high",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 3, "units_per_month": 30 },
+        "automation_hint": "If your boiler is controllable via HA, create a time-based automation to schedule heating during off-peak hours and add a weekly anti-Legionella cycle at 65°C."
+      }
+    ],
+    "health": [
+      {
+        "title": "Maintain a minimum of 60°C to prevent Legionella",
+        "body": "Legionella bacteria thrive between 20°C and 45°C and are killed only above 60°C. If the boiler setpoint is reduced for energy savings, bacterial colonies can establish in the tank and pipework. Legionnaires' disease — a serious form of pneumonia caused by inhaling water droplets containing Legionella — can be life-threatening, particularly for older adults and immunocompromised individuals.\n\nIf you lower the temperature, ensure the system reaches at least 60°C at least once a week. Many boilers include an anti-Legionella cycle in their settings — enable it if available. This is especially important if the boiler has not been used for several days.",
+        "impact": "high",
+        "automation_hint": "Set up a weekly HA automation (e.g., Sunday at 02:00) to trigger an anti-Legionella cycle if your boiler supports remote control."
+      }
+    ]
+  },
+
+  "ac": {
+    "energy": [
+      {
+        "title": "Each degree of additional cooling increases consumption by approximately 8%",
+        "body": "Setting the thermostat to 26°C instead of 23°C reduces energy consumption by approximately 24% under the same outdoor conditions. Clean or replace filters monthly during heavy use — a dirty filter reduces airflow and forces the unit to work harder, increasing consumption by 15–25%. Close windows and doors while the AC is running to avoid cooling outdoor air. Use curtains or blinds on sun-facing windows to reduce heat gain.\n\nInverter-type units are significantly more efficient than fixed-speed models and are worth considering at replacement time.",
+        "impact": "high",
+        "automation_hint": "Link your AC to a presence sensor or door/window sensors in HA — automatically turn it off when rooms are empty or windows are open."
+      },
+      {
+        "title": "Use night mode and fan-only mode to reduce energy during moderate temperatures",
+        "body": "On mild evenings when outdoor temperature drops below 22°C, fan-only mode provides comfort at a fraction of the energy cost of full cooling. Night mode on modern AC units reduces fan speed and slightly raises the temperature setpoint over several hours — maintaining comfort while consuming 20–30% less energy than continuous operation at a fixed setpoint.",
+        "impact": "medium",
+        "automation_hint": "Create an HA automation that switches the AC to fan-only mode when the outdoor temperature sensor reads below a set threshold (e.g., 22°C) in the evening."
+      }
+    ],
+    "health": [
+      {
+        "title": "Large temperature differentials and direct airflow carry health risks",
+        "body": "A difference greater than 6–8°C between indoor and outdoor temperature causes thermal shock when moving between spaces, stressing the cardiovascular system — particularly for elderly people and young children. Direct cold airflow on the body over extended periods causes muscle tension, joint pain, and increased susceptibility to respiratory infections.\n\nPoint the airflow upward so cold air descends gradually and mixes with room air. Target a comfortable temperature of 24–26°C rather than the lowest setting. Regular cleaning of filters prevents the AC from recirculating accumulated dust, mold spores, and bacteria into the room air.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "heat_pump": {
+    "energy": [
+      {
+        "title": "Heat pumps are most efficient above 7°C — optimise setpoints seasonally",
+        "body": "A heat pump's coefficient of performance (COP) drops as outdoor temperature decreases. At 7°C, a typical unit delivers 3–4 kWh of heat per 1 kWh of electricity. Below -5°C, this may drop to 1.5–2. Avoid cycling the heat pump on and off — it is more efficient to run continuously at a lower output. Reducing the flow temperature by 5°C increases COP by approximately 10–15%, meaning underfloor heating systems are inherently more efficient than radiator-based ones.",
+        "impact": "high",
+        "automation_hint": "Use a weather-compensating curve if your heat pump supports it — HA can trigger setpoint adjustments based on an outdoor temperature sensor."
+      },
+      {
+        "title": "Keep the outdoor unit clear of debris and ensure good airflow",
+        "body": "Restricted airflow around the outdoor unit forces the compressor to work harder, reducing efficiency and accelerating wear. Maintain at least 30 cm clearance on all sides, remove leaves, snow, and debris regularly, and avoid placing objects on top of the unit. Annual professional maintenance — including refrigerant level check and coil cleaning — typically recovers 5–15% of degraded efficiency.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Domestic hot water mode must reach 60°C weekly to prevent Legionella",
+        "body": "Heat pumps used for domestic hot water typically operate at 45–55°C for efficiency. At these temperatures, Legionella bacteria can survive and multiply. Most heat pump systems include a scheduled anti-Legionella boost cycle that heats water to 60°C+ — ensure this is enabled and runs at least once a week.\n\nIf your system does not have an automatic cycle, set up a manual boost schedule. This is especially critical after periods of low hot water use (e.g., holidays).",
+        "impact": "high",
+        "automation_hint": "If your heat pump is connected to HA, schedule a weekly anti-Legionella boost cycle via automation — 60°C for 1 hour is typically sufficient."
+      }
+    ]
+  },
+
+  "heater": {
+    "energy": [
+      {
+        "title": "Use a thermostat and reduce temperature at night",
+        "body": "Every 1°C reduction in room temperature saves approximately 6% in heating energy. A night setback of 4–5°C (for example, from 21°C to 16–17°C during sleep hours) significantly reduces overnight consumption without meaningfully affecting comfort. Automating this with a temperature sensor or a scheduled automation in Home Assistant eliminates the need for manual adjustment. Ensure the room is well-insulated — gaps around doors and windows are the most common source of heat loss.",
+        "impact": "high",
+        "automation_hint": "Create a time-based HA automation to lower the heater setpoint at bedtime and raise it 30 minutes before waking — consistent comfort with minimal energy use."
+      }
+    ],
+    "health": [
+      {
+        "title": "Electric heating dries out the air — monitor humidity to avoid respiratory irritation",
+        "body": "Electric heaters warm the air without adding any moisture, so relative humidity drops as temperature rises — a room heated from 15°C to 22°C will see humidity fall by 20–30 percentage points if no moisture is added. At relative humidity below 30%, the mucous membranes lining the nose and throat dry out, reducing their ability to trap airborne pathogens and irritants. Dry air also worsens eczema and psoriasis.\n\nIf you have a humidity sensor, track the relative humidity in heated rooms during winter. If levels consistently fall below 35%, a humidifier with sensor-based automation can maintain the healthy range of 40–55%.",
+        "impact": "medium",
+        "automation_hint": "Link a humidity sensor to a humidifier in HA — turn the humidifier on when humidity drops below 40% and off when it reaches 55%. This maintains the optimal range automatically."
+      }
+    ]
+  },
+
+  "ev_charger": {
+    "energy": [
+      {
+        "title": "Always charge during off-peak hours",
+        "body": "EV charging typically requires 20–60 kWh per session depending on battery capacity and charge level. Shifting charging to off-peak hours takes advantage of the lower tariff and also reduces strain on the electricity grid during peak demand periods. Most EV chargers and cars support scheduled charging via their companion app or directly through Home Assistant.",
+        "impact": "high",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 50, "units_per_month": 4 },
+        "automation_hint": "Use an HA automation triggered by time or grid carbon intensity data (via an integration) to start charging when rates are lowest."
+      },
+      {
+        "title": "Keep the battery between 20% and 80% for daily use",
+        "body": "Regularly charging to 100% and depleting below 10% accelerates lithium-ion battery degradation over time. Most EV manufacturers recommend a daily charge limit of 80%, reserving full charges for long trips. Many EVs and chargers allow you to set a charge limit directly — check your EV's companion app or settings.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Charge in a well-ventilated space",
+        "body": "Home AC charging at 7–11 kW generates modest heat over several hours. While generally safe, charging in an enclosed garage without adequate ventilation allows heat to accumulate. Ensure the charging area has good airflow, particularly during warm months. Fast DC chargers (above 22 kW) generate significantly more heat and should always be used in open or well-ventilated locations.",
+        "impact": "low",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "solar_panel": {
+    "energy": [
+      {
+        "title": "Shift high-consumption appliances to peak solar production hours",
+        "body": "Solar panels typically produce peak power between 10:00 and 15:00 on clear days. Running your dishwasher, washing machine, or EV charger during these hours maximises self-consumption — using the energy you generate directly rather than exporting it at a lower feed-in tariff or consuming grid power in the evening. Even on cloudy days, production is highest midday.\n\nTracking your self-consumption ratio (energy used directly vs total generated) is the key metric for optimising solar ROI.",
+        "impact": "high",
+        "automation_hint": "Use HA automations triggered by your solar inverter's production sensor to start appliances automatically when generation exceeds a set threshold (e.g., 1.5 kW)."
+      },
+      {
+        "title": "Keep panels clean and unshaded for maximum output",
+        "body": "Dust, bird droppings, and partial shading can reduce panel output by 10–25%. In most climates, rain is sufficient to keep panels clean, but in dry or dusty regions a manual rinse once or twice a year is beneficial. Even a small shadow from a tree branch or chimney covering 10% of one panel can disproportionately reduce output due to how series-connected strings work.\n\nMonitor per-panel production if your inverter supports it — a significant underperformer often indicates shading, soiling, or a fault.",
+        "impact": "medium",
+        "automation_hint": "Log daily production totals in HA using a utility meter helper and alert yourself if daily output drops significantly below the seasonal average."
+      }
+    ],
+    "health": [
+      {
+        "title": "Solar panels have a positive environmental and air quality impact",
+        "body": "Each kWh generated from solar instead of the grid avoids approximately 0.3–0.5 kg of CO₂ emissions (depending on your country's grid mix). Over a 25-year lifespan, a typical residential system (4 kWp) offsets 30–50 tonnes of CO₂. Solar generation also avoids the NOₓ and particulate emissions associated with fossil fuel combustion, contributing to better regional air quality.",
+        "impact": "low",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "battery_storage": {
+    "energy": [
+      {
+        "title": "Charge from solar during the day, discharge during peak-price evening hours",
+        "body": "A home battery is most valuable when combined with solar panels — storing surplus daytime generation and using it in the evening avoids grid consumption at peak tariff rates. If you have a time-of-use tariff, the battery can also be charged from the grid during cheap overnight hours and discharged during expensive peak periods. Most battery management systems handle this automatically if configured correctly.\n\nKeep the battery state of charge between 20% and 90% for optimal cycle life — avoid daily full charges and deep discharges unless necessary.",
+        "impact": "high",
+        "automation_hint": "HA can control many battery inverters directly or via integrations. Automate charging to solar surplus and discharging to match your peak-tariff hours."
+      }
+    ],
+    "health": [
+      {
+        "title": "Install in a well-ventilated, temperature-controlled space",
+        "body": "Lithium-ion batteries perform best and last longest when kept between 15°C and 25°C. High temperatures (above 35°C) accelerate degradation and in extreme cases can contribute to thermal runaway — a rare but serious safety event. Install the battery in a location with good ventilation, away from direct sunlight, and ensure it is accessible for annual inspection.\n\nAlways follow the manufacturer's installation guidelines regarding wall clearances, ventilation requirements, and proximity to flammable materials.",
+        "impact": "medium",
+        "automation_hint": "If the battery installation space has a temperature sensor, create an HA alert if the ambient temperature exceeds 35°C."
+      }
+    ]
+  },
+
+  "smart_meter": {
+    "energy": [
+      {
+        "title": "Use real-time consumption data to identify waste and high-usage patterns",
+        "body": "A smart meter provides granular, real-time visibility into your home's total electricity consumption. Review hourly and daily usage patterns to identify unexpected baseline consumption — loads that never turn off, devices in standby, or appliances consuming more than expected. A healthy baseline when no one is home and no appliances are running should be below 50–100W for most households.\n\nExporting your smart meter data to Home Assistant enables long-term analysis, anomaly detection, and automation triggers based on whole-home consumption.",
+        "impact": "high",
+        "automation_hint": "Import your smart meter data into HA via an integration (e.g., your energy supplier's API or a P1 port reader). Use the Energy dashboard and create alerts for unexpectedly high baseline consumption."
+      }
+    ],
+    "health": [
+      {
+        "title": "Smart meter data enables informed decisions about energy and comfort",
+        "body": "Visibility into your energy consumption has consistently been shown to reduce household usage by 5–15% — simply because people adjust behaviour when they can see the impact. Smart meter data enables you to correlate energy use with comfort indicators (temperature, air quality), identify inefficient appliances, and make data-driven decisions about upgrades or automation investments.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "lights": {
+    "energy": [
+      {
+        "title": "LED replacement offers the fastest payback of any home upgrade",
+        "body": "A standard LED bulb uses 75–85% less energy than an incandescent equivalent and lasts 15–25 times longer. A 10W LED replaces a 60W incandescent, saving 50W per bulb per hour of use. For a room used 5 hours per day with 5 bulbs, replacing them saves approximately 90 kWh per year. The cost of replacement LED bulbs is typically recovered within 6–12 months through energy savings alone.",
+        "impact": "high",
+        "saving_calc": { "type": "flat_annual", "kwh_year": 90 },
+        "automation_hint": null
+      },
+      {
+        "title": "Automate lights based on presence and daylight to eliminate waste",
+        "body": "Lights left on in unoccupied rooms are a common and easily preventable source of energy waste. A motion sensor or presence detection system paired with a smart switch can ensure lights are never left on unnecessarily. Additionally, using a lux sensor to avoid turning on lights when natural daylight is sufficient can reduce lighting energy use by 30–50% in rooms with good window exposure.",
+        "impact": "high",
+        "automation_hint": "Create an HA automation: turn on lights when a room occupancy sensor activates AND the lux level is below a threshold (e.g., 50 lx). Turn off after 5 minutes of no motion."
+      }
+    ],
+    "health": [
+      {
+        "title": "Light colour temperature affects sleep and melatonin production",
+        "body": "Blue-white light (colour temperatures above 5000K) suppresses melatonin production — the hormone that regulates sleep onset. Exposure in the 2–3 hours before sleep delays sleep onset and reduces sleep quality. Warm white light (2700–3000K) does not have this effect and is recommended for living areas and bedrooms in the evening.\n\nIf your lights are smart or dimmable, reducing brightness and shifting to warmer tones after 20:00 supports natural sleep cycles. This is particularly important for children, whose melatonin suppression from blue light is more pronounced than in adults.",
+        "impact": "medium",
+        "automation_hint": "Create a HA automation that shifts smart bulbs to warm white (2700K) and reduces brightness to 40% after 20:00 in living areas and bedrooms."
+      }
+    ]
+  },
+
+  "air_purifier": {
+    "energy": [
+      {
+        "title": "Automate based on air quality to reduce unnecessary runtime",
+        "body": "Running an air purifier continuously consumes 20–60W depending on the unit and fan speed, adding 15–45 kWh per month if left on 24/7. Automating it with a PM2.5 sensor — so it activates only when particle levels exceed a threshold — typically reduces runtime by 40–70% in most households without sacrificing air quality.\n\nIf you do not yet have an air quality sensor, scheduling the purifier during known high-pollution periods (morning traffic hours, cooking times) is a useful intermediate step.",
+        "impact": "medium",
+        "automation_hint": "Link your air purifier to a PM2.5 sensor in HA: turn on when PM2.5 exceeds 15 µg/m³, turn off when it drops below 10 µg/m³. This maintains air quality with minimal runtime."
+      }
+    ],
+    "health": [
+      {
+        "title": "Fine particles are the leading indoor air health risk",
+        "body": "Indoor air can be 2–5 times more polluted than outdoor air, according to the US EPA. Fine particles (PM2.5) — generated by cooking, candles, cleaning products, furniture off-gassing, and outdoor pollution entering through gaps — are the primary cause of respiratory irritation, reduced lung function, and long-term cardiovascular risk with chronic exposure.\n\nThe WHO daily average guideline for PM2.5 is 15 µg/m³. People with asthma, COPD, or allergies are significantly more sensitive. An air purifier with a HEPA filter, running when PM2.5 exceeds safe levels, is one of the most effective interventions for indoor health — particularly in urban environments or homes without mechanical ventilation.",
+        "impact": "high",
+        "automation_hint": "If you have a PM2.5 sensor, create an HA alert that notifies you when indoor particle levels exceed the WHO guideline of 15 µg/m³ and automatically activates the purifier."
+      }
+    ]
+  },
+
+  "humidifier": {
+    "energy": [
+      {
+        "title": "Use a humidity sensor to prevent over-running",
+        "body": "Without a sensor, humidifiers often continue running after the target humidity is reached, wasting energy and risking excess moisture in the room. A humidity sensor linked via automation stops the humidifier once the target level (ideally 45–55% relative humidity) is achieved. Typical humidifiers use 25–50W — unnecessary runtime adds 5–15 kWh per month. If you already have a humidity sensor in your setup, connecting them via an automation is straightforward.",
+        "impact": "medium",
+        "automation_hint": "Create an HA automation: turn the humidifier on when relative humidity drops below 40%, turn it off when it reaches 55%. A simple two-threshold control prevents over- and under-humidification."
+      }
+    ],
+    "health": [
+      {
+        "title": "Humidity levels directly affect respiratory health and allergen exposure",
+        "body": "Relative humidity below 35% dries out the mucous membranes lining the nose, throat, and lungs — the first line of defence against airborne pathogens. Dry air makes it easier for viruses and bacteria to travel through the air and harder for the body to expel them. It also worsens eczema, psoriasis, and asthma symptoms.\n\nHumidity above 65% creates ideal conditions for mold growth and dust mite proliferation — both strong triggers for asthma and allergic rhinitis. The optimal range for both health and comfort is 40–60% relative humidity. A humidifier with a sensor-based automation maintains this range automatically.",
+        "impact": "high",
+        "automation_hint": "Use HA to log humidity trends over time. If a room consistently drops below 35% in winter, it signals a need for either more humidification or improved draught-proofing."
+      }
+    ]
+  },
+
+  "ventilation_fan": {
+    "energy": [
+      {
+        "title": "Run ventilation fans only when needed — humidity or timer-triggered",
+        "body": "A bathroom or kitchen extractor fan running continuously wastes 10–30W that could be eliminated entirely with basic automation. Running the fan for 15–20 minutes after a shower or cooking session removes the moisture effectively. A humidity sensor combined with a smart switch is the most precise approach — the fan activates when humidity rises and shuts off once it returns to baseline, regardless of how long that takes.",
+        "impact": "medium",
+        "automation_hint": "In HA, create an automation triggered when bathroom humidity exceeds 70%: turn on the fan switch. Add a second trigger for when humidity drops back below 60% and has been falling for 5 minutes: turn it off. This avoids both under- and over-running."
+      }
+    ],
+    "health": [
+      {
+        "title": "Inadequate extraction causes chronic moisture buildup",
+        "body": "A bathroom fan that runs too briefly or has reduced airflow due to a dirty grille cannot remove humidity fast enough after a shower. Sustained indoor humidity above 65% significantly accelerates mold growth on walls, ceilings, and grout. Mold spores are a known trigger for asthma and respiratory irritation, and remediation is costly once established.\n\nClean the fan grille annually and check that the duct exhausts to the outside — recirculating fans with charcoal filters remove odours but not moisture.",
+        "impact": "high",
+        "automation_hint": "A humidity sensor placed near the shower can alert you when post-shower humidity remains above 65% for more than 30 minutes — indicating the fan is underperforming."
+      }
+    ]
+  },
+
+  "ventilation_system": {
+    "energy": [
+      {
+        "title": "Demand-controlled operation can cut runtime by 30–60%",
+        "body": "A whole-house mechanical extract ventilation (MEV) system running at a fixed speed consumes 30–150W continuously. Switching to demand-controlled mode — where fan speed responds to CO₂ or humidity sensors rather than running at a fixed rate — reduces operating hours and energy use significantly without compromising air quality. Most modern MEV units support variable speed control; older units can be adapted with a smart switch and sensor automation.",
+        "impact": "high",
+        "automation_hint": "Link your CO₂ sensor to the ventilation unit in HA: activate boost speed when CO₂ exceeds 1000 ppm, return to low speed when it drops below 800 ppm. Add humidity-triggered boost for bathrooms and kitchen separately."
+      },
+      {
+        "title": "Filter condition directly affects energy consumption",
+        "body": "A clogged or overdue filter forces the fan motor to work harder to maintain airflow, increasing power draw by 15–30% while delivering less ventilation than intended. Most MEV system filters require replacement every 6–12 months depending on environment. Check the manufacturer's schedule and consider setting a recurring reminder — filter replacement is inexpensive compared to the energy waste and motor wear from running dirty.",
+        "impact": "medium",
+        "automation_hint": "In HA, create a date helper tracking the last filter change. Add an automation that sends a notification 6 months later as a maintenance reminder."
+      }
+    ],
+    "health": [
+      {
+        "title": "CO₂ levels directly affect cognitive performance and sleep quality",
+        "body": "Outdoor air contains approximately 420 ppm CO₂. At 800 ppm, most people begin to feel slightly drowsy. Above 1000 ppm, cognitive performance measurably declines — peer-reviewed studies have shown a 15–50% reduction in decision-making ability at moderate CO₂ elevations.\n\nAbove 1500 ppm, headaches and difficulty concentrating are common. A closed bedroom can reach 1500–2000 ppm within 2–3 hours of sleep. Proper MEV operation ensures these levels are managed passively without manual intervention.",
+        "impact": "high",
+        "automation_hint": "Place a CO₂ sensor in the bedroom and main living area. Create HA alerts at 1000 ppm and 1500 ppm. Display real-time values on your dashboard alongside the ventilation system state."
+      }
+    ]
+  },
+
+  "heat_recovery": {
+    "energy": [
+      {
+        "title": "Summer bypass mode prevents unwanted heat gain",
+        "body": "MVHR systems recover heat from outgoing air and transfer it to incoming air — highly efficient in winter, but counterproductive in summer when outdoor air is cooler than indoor air. Most MVHR units include a summer bypass mode that routes incoming air around the heat exchanger when outdoor temperature drops below indoor temperature (typically at night). Ensure bypass mode is enabled in summer; some units require manual activation or scheduling.",
+        "impact": "high",
+        "automation_hint": "In HA, automate bypass mode activation using the outdoor temperature sensor: enable bypass when outdoor temp < indoor temp and outdoor temp < 20°C. Disable bypass when outdoor temp exceeds indoor temp during the day."
+      },
+      {
+        "title": "Heat exchanger and filter maintenance preserves efficiency",
+        "body": "An MVHR unit's efficiency (typically 80–92% heat recovery) degrades significantly with dirty filters or a fouled heat exchanger core. A 20% efficiency drop on a unit recovering €300/year of heat costs €60/year in lost savings — typically far more than the cost of a filter replacement. Most manufacturers recommend filter checks every 3 months and full replacement every 6–12 months. The heat exchanger core should be removed and cleaned annually in dusty environments.",
+        "impact": "medium",
+        "automation_hint": "Track filter change dates in HA using input_datetime helpers. An automation can send a notification every 90 days reminding you to inspect filters, with a second reminder at 180 days for replacement."
+      }
+    ],
+    "health": [
+      {
+        "title": "MVHR provides continuous fresh air without heat loss or draughts",
+        "body": "Unlike opening windows, a properly maintained MVHR system continuously supplies filtered fresh air to bedrooms and living areas while exhausting stale air from bathrooms and kitchen — maintaining indoor CO₂ below 800 ppm without temperature loss or noise. This is particularly valuable during winter when windows are kept closed and during high-pollen periods for allergy sufferers.\n\nFilters also remove a significant proportion of outdoor particulates (PM2.5) before they enter the living space, providing an additional health benefit in urban or high-traffic environments.",
+        "impact": "high",
+        "automation_hint": "Monitor the supply and extract fan speeds in HA. A significant and sustained difference between supply and extract airflow can indicate a blocked filter or duct — create an alert if the imbalance persists for more than 24 hours."
+      }
+    ]
+  },
+
+  "tv": {
+    "energy": [
+      {
+        "title": "Eliminate standby consumption and reduce screen brightness",
+        "body": "Modern TVs in standby mode consume 0.5–2W continuously — a seemingly small amount that adds up to 4–17 kWh per year per device. Using a smart plug or the TV's power switch (rather than the remote standby) eliminates this entirely. Reducing screen brightness by 25–30% typically saves 15–20% of active consumption with minimal perceived visual impact, particularly in normal room lighting conditions.",
+        "impact": "low",
+        "automation_hint": "Use a smart plug with energy monitoring to automatically cut power to the TV after midnight or when the TV has been in standby for more than 2 hours."
+      }
+    ],
+    "health": [
+      {
+        "title": "Screen light in the evening disrupts sleep — reduce brightness after 20:00",
+        "body": "Screens emit blue-spectrum light at intensities that suppress melatonin production — the hormone that signals the body to prepare for sleep. Watching TV in a dark room in the 2–3 hours before bed delays sleep onset and reduces slow-wave (deep) sleep quality. Children and adolescents are significantly more sensitive to this effect than adults.\n\nReduce TV brightness to the lowest comfortable setting in the evening. If your TV supports it, enable the warm colour mode or 'eye comfort' setting after 20:00. Increasing ambient room lighting while watching reduces the contrast effect that amplifies blue-light impact on the eyes.",
+        "impact": "medium",
+        "automation_hint": "Use HA to schedule the TV's smart plug to cut power at a set time (e.g., 23:00), encouraging healthy screen-time boundaries."
+      }
+    ]
+  },
+
+  "oven": {
+    "energy": [
+      {
+        "title": "Avoid unnecessary preheating and use residual heat",
+        "body": "Most modern ovens reach cooking temperature within 10–15 minutes — preheating for longer periods wastes energy with no benefit. For dishes with cooking times above 30 minutes, you can turn the oven off 10 minutes early and let residual heat finish cooking without opening the door. Fan-assisted (convection) mode circulates heat more evenly and reduces cooking time by 20–30% compared to conventional static heating. Batch cooking multiple dishes in a single session is the most impactful efficiency measure.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Cooking generates significant indoor air pollution — ventilate during and after use",
+        "body": "Cooking is one of the largest sources of indoor air pollution in most homes. Gas ovens emit nitrogen dioxide (NO₂) and carbon monoxide (CO) as combustion byproducts. Electric ovens and hobs produce fine particles (PM2.5) from food burning and steam, and volatile organic compounds (VOCs) from non-stick coatings and heated fats. Concentrations during cooking can exceed outdoor pollution levels by 5–10 times.\n\nAlways use an extractor hood at the highest effective setting while cooking, or open a window. Run the extractor for at least 15 minutes after cooking ends — PM2.5 levels remain elevated long after the heat source is off.",
+        "impact": "high",
+        "automation_hint": "If you have a CO₂, PM2.5, or VOC sensor in the kitchen, create an HA alert when levels remain elevated 20 minutes after the oven turns off — a signal that ventilation is insufficient."
+      }
+    ]
+  },
+
+  "coffee_machine": {
+    "energy": [
+      {
+        "title": "Descale regularly and use the auto-off timer",
+        "body": "Scale buildup on the heating element forces the coffee machine to use more energy to reach the correct brewing temperature — a fully scaled element can increase energy use by 30–50%. Descale every 2–3 months depending on water hardness in your area. Most coffee machines have an auto-off timer — ensure it is set to power off the machine 15–30 minutes after use rather than leaving it on standby for hours.",
+        "impact": "low",
+        "automation_hint": "Use a smart plug to automatically cut power to the coffee machine 30 minutes after it was last turned on, eliminating standby consumption entirely."
+      }
+    ],
+    "health": [
+      {
+        "title": "Clean the water tank and internal circuits regularly to prevent bacterial growth",
+        "body": "The water reservoir of a coffee machine is a warm, moist environment that supports bacterial and mold growth if not cleaned regularly. Empty and rinse the tank daily if possible, and clean it thoroughly with warm soapy water once a week. The internal tubing and brewing group also accumulate coffee oils and mineral deposits — run a cleaning cycle (with descaler or a dedicated cleaning tablet) as recommended by the manufacturer.\n\nNever leave water sitting in the tank for more than 24 hours, especially in warm environments.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "kettle": {
+    "energy": [
+      {
+        "title": "Only boil the water you need",
+        "body": "Studies show that most people overfill their kettle by an average of 40% — boiling significantly more water than they use. Boiling 500 ml instead of 1.5 litres uses roughly one third the energy. Most kettles include level markings — using the minimum marking for your needs is the simplest and most effective energy-saving habit for this appliance. An electric kettle is already far more efficient than a stovetop — this tip is about using it optimally.",
+        "impact": "low",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Descale regularly to maintain water quality",
+        "body": "Limescale buildup inside the kettle does not affect water safety but can release small particles into your drink. More importantly, a heavily scaled heating element is significantly less efficient and takes longer to boil the same volume of water. Descale every 1–3 months depending on your water hardness — a solution of equal parts water and white vinegar left for an hour is effective and inexpensive.\n\nAvoid repeatedly re-boiling the same water — while harmless in small amounts, repeatedly boiled water concentrates dissolved minerals and reduces the flavour of hot drinks.",
+        "impact": "low",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "robot_vacuum": {
+    "energy": [
+      {
+        "title": "Schedule during off-peak hours and optimise run frequency",
+        "body": "A robot vacuum typically uses 20–60W during operation and 2–5W while charging. Running it during off-peak hours reduces cost per cycle. Scheduling 3–4 runs per week is sufficient for most households — daily runs for light-traffic areas consume energy with diminishing cleaning benefit. Keeping the brushes and filter clean maintains suction efficiency and prevents the motor from running harder than necessary.",
+        "impact": "low",
+        "saving_calc": { "type": "offpeak", "kwh_unit": 0.08, "units_per_month": 20 },
+        "automation_hint": "Use an HA automation triggered by your presence sensor: start the vacuum when everyone leaves home, stop and return to base when someone returns."
+      }
+    ],
+    "health": [
+      {
+        "title": "Clean the HEPA filter regularly for effective allergen capture",
+        "body": "Robot vacuums with HEPA filters capture particles down to 0.3 µm — including dust mite allergens, pollen, and pet dander — which are common triggers for asthma and allergic rhinitis. However, a clogged filter bypasses filtration and exhausts fine particles back into the room. Clean or replace the filter according to the manufacturer's schedule — typically every 2–4 weeks of regular use.\n\nEmpty the dustbin after every run to prevent captured allergens from being re-released during the next cycle.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "smart_lock": {
+    "energy": [
+      {
+        "title": "Monitor battery level to avoid unexpected lockouts",
+        "body": "Smart locks are battery-powered and typically last 6–12 months on a set of AA or AAA batteries depending on usage frequency and temperature. Cold weather significantly reduces battery life — external door locks can drain 30–50% faster in winter. Monitor the battery level entity in Home Assistant and create an alert when it drops below 20% to avoid being locked out unexpectedly.",
+        "impact": "low",
+        "automation_hint": "Create an HA automation that sends a notification when the smart lock battery drops below 20%."
+      }
+    ],
+    "health": [
+      {
+        "title": "Keep firmware updated and review access logs regularly",
+        "body": "Smart locks are a security-critical device — an outdated firmware may contain vulnerabilities that could allow unauthorised access. Enable automatic firmware updates in the lock's companion app, or check for updates monthly. Most smart locks maintain an access log — review it periodically to detect any unexpected entries.\n\nUse unique access codes for different people (family members, cleaners, guests) rather than sharing a single code. This allows you to revoke access for specific individuals without changing the main code.",
+        "impact": "high",
+        "automation_hint": "Use HA automations to automatically lock the door after a set time (e.g., 30 minutes after the last person leaves) and receive notifications for any access events."
+      }
+    ]
+  },
+
+  "security_camera": {
+    "energy": [
+      {
+        "title": "Use motion-triggered recording to reduce storage and energy use",
+        "body": "Continuous 24/7 recording generates large amounts of storage and, for battery-powered cameras, significantly reduces battery life. Motion-triggered recording activates only when needed, reducing storage requirements by 80–90% and extending battery life proportionally. For wired cameras, continuous recording vs motion-triggered makes a smaller energy difference but has a significant impact on storage costs and the time needed to review footage.",
+        "impact": "low",
+        "automation_hint": "In HA, use the camera's motion detection entity to trigger automations — for example, send a snapshot notification when motion is detected outside working hours."
+      }
+    ],
+    "health": [
+      {
+        "title": "Keep firmware updated and secure your camera network",
+        "body": "Security cameras with outdated firmware have historically been a primary entry point for home network intrusions — compromised cameras have been used for surveillance, as botnet nodes, and as access points to other devices on the network. Enable automatic firmware updates, change the default password immediately after installation, and place cameras on a separate IoT VLAN if your router supports it.\n\nBe mindful of where cameras are pointed — inadvertent capture of neighbours' property or public spaces may have legal implications depending on your jurisdiction.",
+        "impact": "high",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "garage_door": {
+    "energy": [
+      {
+        "title": "Insulate and draught-proof the garage door to reduce heating loss",
+        "body": "An uninsulated garage door is a significant source of heat loss for attached garages, increasing the heating demand for adjacent living spaces by up to 10–15%. Insulation kits for panel doors are inexpensive and can be installed without professional help. Additionally, check the bottom seal and side seals for gaps — cold air infiltration around an improperly sealed garage door can noticeably lower the temperature of adjacent rooms.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ],
+    "health": [
+      {
+        "title": "Automate closing and add obstacle sensors to prevent accidents",
+        "body": "An open garage door left unattended is a security and safety risk — it provides access to tools, chemicals, and potentially the home interior. Ensure your garage door opener has obstacle detection (reversing when it hits something during closing) and a timer-to-close function. Review the obstacle sensor regularly by testing it with a soft object.\n\nNever run a vehicle engine inside a closed or partially open garage — carbon monoxide accumulates rapidly and is odourless. If you charge an EV in the garage, ensure adequate ventilation.",
+        "impact": "high",
+        "automation_hint": "Create an HA automation that alerts you if the garage door has been open for more than 30 minutes, and optionally closes it automatically after a configurable timeout."
+      }
+    ]
+  },
+
+  "sensor_temp": {
+    "energy": [
+      {
+        "title": "Use temperature data to automate heating and cooling",
+        "body": "This sensor's own consumption is negligible — typically 0.5–2W. Its value lies in enabling automations: linking a temperature sensor to a thermostat or heater allows heating to run only when the room is actually cold, rather than on a fixed schedule. This typically reduces heating consumption by 15–30% compared to timed-only control.",
+        "impact": "high",
+        "automation_hint": "Create a thermostat automation in HA: turn on heating when temperature drops below your comfort threshold (e.g., 19°C) and off when it reaches 21°C. Add a night mode with a lower setpoint."
+      }
+    ],
+    "health": [
+      {
+        "title": "Temperature monitoring enables comfortable and healthy living conditions",
+        "body": "The WHO recommends a minimum indoor temperature of 18°C for healthy adults and 20°C for households with young children or elderly occupants. Prolonged exposure to temperatures below 16°C increases respiratory infection risk and cardiovascular strain. Temperatures above 24°C during sleep reduce sleep quality.\n\nContinuous temperature monitoring allows you to maintain conditions within the healthy comfort range and catch issues early — such as heating failure in winter or overheating in summer.",
+        "impact": "medium",
+        "automation_hint": "Set up HA alerts for temperatures below 16°C (heating failure risk) and above 26°C (overheating) in all occupied rooms, especially bedrooms."
+      }
+    ]
+  },
+
+  "sensor_humidity": {
+    "energy": [
+      {
+        "title": "Link humidity data to automate your humidifier or ventilation",
+        "body": "A humidity sensor's own consumption is negligible. Its primary value is enabling other appliances to run only when needed: a humidifier controlled by humidity data avoids over-running past the target level, and ventilation triggered by humidity spikes (from cooking or showering) removes excess moisture before it condenses on surfaces. This approach reduces unnecessary runtime and energy use.",
+        "impact": "medium",
+        "automation_hint": "In HA, trigger your bathroom or kitchen extractor fan when humidity rises more than 15 percentage points above the baseline — turns on automatically during showers and cooking, off when humidity normalises."
+      }
+    ],
+    "health": [
+      {
+        "title": "Objective humidity data prevents both over-dry and over-humid conditions",
+        "body": "Human perception of humidity is unreliable — most people cannot distinguish 35% from 55% relative humidity by feel alone, especially in cooler rooms. A sensor provides objective data and allows automatic correction before conditions become uncomfortable or harmful. The optimal range of 40–60% relative humidity prevents respiratory irritation from dry air and mold growth from excess moisture.",
+        "impact": "high",
+        "automation_hint": "Log humidity trends in every room using HA's history. Rooms that consistently exceed 65% humidity indicate a ventilation problem that needs addressing before mold develops."
+      }
+    ]
+  },
+
+  "sensor_co2": {
+    "energy": [
+      {
+        "title": "CO₂ data enables demand-controlled ventilation",
+        "body": "A CO₂ sensor's own consumption is negligible. Its value is enabling ventilation to run only when needed: a ventilation unit triggered by CO₂ levels above 1000 ppm typically operates 30–60% fewer hours than one running continuously, while maintaining equivalent or better air quality. This is one of the highest-impact automations available for both energy and health simultaneously.",
+        "impact": "high",
+        "automation_hint": "Link your CO₂ sensor to your ventilation unit, fan, or a window-open reminder in HA: activate when CO₂ exceeds 1000 ppm, deactivate when it drops below 800 ppm."
+      }
+    ],
+    "health": [
+      {
+        "title": "CO₂ is the most important indicator of indoor air quality",
+        "body": "CO₂ has no smell and is invisible — the only way to know indoor levels is to measure them. Concentrations above 1000 ppm consistently impair cognitive performance, and above 1500 ppm cause physical symptoms including headaches and fatigue. A CO₂ sensor combined with a ventilation automation is the most effective single intervention for maintaining healthy indoor air quality.\n\nConsider placing the sensor in the bedroom and main living area, where occupancy is highest.",
+        "impact": "high",
+        "automation_hint": "Create HA notifications at 1000 ppm ('open a window') and 1500 ppm ('ventilate now'). Display CO₂ levels on your home dashboard for daily awareness."
+      }
+    ]
+  },
+
+  "sensor_pressure": {
+    "energy": null,
+    "health": [
+      {
+        "title": "Barometric pressure as a weather and comfort indicator",
+        "body": "Atmospheric pressure readings from an indoor sensor reflect outdoor weather conditions. Rapid drops in pressure often precede storms and are associated with increased migraine and joint pain episodes in sensitive individuals. While there is no direct home automation intervention available, pressure data can be used to anticipate weather changes and prepare accordingly.\n\nPressure data combined with temperature and humidity readings provides a comprehensive picture of indoor environmental conditions and can improve the accuracy of comfort-based automations.",
+        "impact": "low",
+        "automation_hint": "Use rapid pressure drops (more than 3 hPa in 3 hours) as a trigger in HA to close smart windows or awnings before a storm arrives."
+      }
+    ]
+  },
+
+  "sensor_generic": {
+    "energy": [
+      {
+        "title": "Sensor data enables smarter automation and reduced energy waste",
+        "body": "This sensor's own energy consumption is negligible — typically under 2W. The energy-saving potential lies entirely in using its data to automate other appliances, so they run only when conditions actually require it. Identify which appliances in your home could benefit from being linked to this sensor and set up automations in Home Assistant accordingly.",
+        "impact": "medium",
+        "automation_hint": "Review your Home Assistant entity list to identify appliances that could be controlled based on this sensor's readings. Even simple threshold-based automations can significantly reduce unnecessary runtime."
+      }
+    ],
+    "health": [
+      {
+        "title": "Monitoring data you cannot perceive directly",
+        "body": "Human senses reliably detect temperature extremes and obvious humidity changes, but are poor at detecting CO₂ buildup, fine particle levels, or gradual environmental changes. Sensor data provides an objective baseline and alerts you to conditions that would otherwise go unnoticed until they cause discomfort or health effects. The more sensor data your home generates, the more precisely it can be automated to maintain healthy and comfortable conditions.",
+        "impact": "medium",
+        "automation_hint": null
+      }
+    ]
+  },
+
+  "other": {
+    "energy": [
+      {
+        "title": "No specific recommendations available for this device type",
+        "body": "No targeted energy recommendations are available for the selected device type. If this device has a power sensor attached, visit the Statistics page to analyse its consumption pattern and identify potential optimisation opportunities.",
+        "impact": "low",
+        "automation_hint": null
+      }
+    ],
+    "health": null
+  }
+}

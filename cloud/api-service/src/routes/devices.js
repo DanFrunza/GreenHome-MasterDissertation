@@ -14,14 +14,16 @@ router.get('/', async (req, res) => {
                 dm.energy_class,
                 JSON_AGG(
                     JSON_BUILD_OBJECT(
-                        'entity_id',     e.entity_id,
-                        'domain',        e.domain,
-                        'friendly_name', e.friendly_name,
-                        'unit',          e.unit,
-                        'device_class',  e.device_class,
-                        'state',         e.state,
-                        'available',     e.available,
-                        'last_seen',     e.last_seen
+                        'entity_id',          e.entity_id,
+                        'domain',             e.domain,
+                        'friendly_name',      e.friendly_name,
+                        'unit',               e.unit,
+                        'device_class',       e.device_class,
+                        'state',              e.state,
+                        'available',          e.available,
+                        'last_seen',          e.last_seen,
+                        'anomaly_muted',      COALESCE(e.anomaly_muted, false),
+                        'anomaly_suppressed', COALESCE(e.anomaly_suppressed, false)
                     ) ORDER BY e.entity_id
                 ) AS entities
             FROM entities e

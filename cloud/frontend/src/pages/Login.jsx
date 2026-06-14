@@ -3,8 +3,10 @@ import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { API_URL } from '../config'
 import { useUser } from '../context/UserContext'
 import '../styles/Auth.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function Login() {
+  usePageTitle('Sign in')
   const { user, login } = useUser()
   const navigate = useNavigate()
 
@@ -13,7 +15,7 @@ export default function Login() {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to="/home" replace />
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -28,7 +30,7 @@ export default function Login() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); return }
       login(data.token, data.user)
-      navigate('/')
+      navigate('/home')
     } catch {
       setError('Could not connect to server')
     } finally {

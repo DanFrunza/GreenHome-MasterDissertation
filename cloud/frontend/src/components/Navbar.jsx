@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/statistics',  label: 'Statistics'  },
   { path: '/diagnostics', label: 'Diagnostics' },
   { path: '/roi',         label: 'ROI'         },
+  { path: '/eco-guide',   label: 'Eco Guide'   },
 ]
 
 const statusColor = (home) =>
@@ -54,6 +55,12 @@ export default function Navbar() {
             onClick={() => setOpen(prev => !prev)}
           >
             <span className="home-selector-dot" style={{ backgroundColor: statusColor(selectedHome) }} />
+            {selectedHome?.agent_status === 'offline' && (
+              <span
+                className="agent-offline-icon"
+                title="Local agent offline — commands may not work"
+              />
+            )}
             <span className="home-selector-name">{selectedHome?.name || selectedHome?.id}</span>
           </button>
 
@@ -65,7 +72,15 @@ export default function Navbar() {
                   className={`home-selector-option ${selectedHome?.id === h.id ? 'active' : ''}`}
                   onClick={() => { setSelectedHome(h); setOpen(false) }}
                 >
-                  <span className="home-selector-dot" style={{ backgroundColor: statusColor(h) }} />
+                  <span className="home-option-dots">
+                    <span className="home-selector-dot" style={{ backgroundColor: statusColor(h) }} />
+                    {h.agent_status === 'offline' && (
+                      <span
+                        className="agent-offline-icon"
+                        title="Local agent offline — commands may not work"
+                      />
+                    )}
+                  </span>
                   <div className="home-option-text">
                     <span className="home-option-name">{h.name || h.id}</span>
                     <span className="home-option-status">{h.status === 'online' ? 'Online' : 'Offline'}</span>

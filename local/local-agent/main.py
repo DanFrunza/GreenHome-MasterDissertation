@@ -10,16 +10,16 @@ SYSTEM_HANDLERS = {
     "automation_discovery": handle_automation_discovery,
 }
 
-STATUS_TOPIC = "home/system/status"
+AGENT_STATUS_TOPIC = "home/system/agent_status"
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to local broker")
-        client.publish(STATUS_TOPIC, "online", qos=1, retain=True)
+        client.publish(AGENT_STATUS_TOPIC, "online", qos=1, retain=True)
         client.subscribe("backend/system/#")
         client.subscribe("backend/command/#")
-        handle_entity_discovery(client, "{}")
-        handle_automation_discovery(client, "{}")
+        handle_entity_discovery(client, "{}", retry_forever=True)
+        handle_automation_discovery(client, "{}", retry_forever=True)
     else:
         print(f"Connection failed: {rc}")
 
@@ -53,7 +53,7 @@ client.on_message = on_message
 client.on_disconnect = on_disconnect
 
 print(f"Connecting to {LOCAL_BROKER}:{LOCAL_PORT}...")
-client.will_set(STATUS_TOPIC, "offline", qos=1, retain=True)
+client.will_set(AGENT_STATUS_TOPIC, "offline", qos=1, retain=True)
 client.reconnect_delay_set(min_delay=1, max_delay=32)
 
 while True:
@@ -66,9 +66,17 @@ while True:
 
 client.loop_start()
 
+HEARTBEAT_INTERVAL = 60  # seconds
+
 try:
+    elapsed = 0
     while True:
         time.sleep(1)
+        elapsed += 1
+        if elapsed >= HEARTBEAT_INTERVAL:
+            elapsed = 0
+            if client.is_connected():
+                client.publish(AGENT_STATUS_TOPIC, "online", qos=1, retain=True)
 except KeyboardInterrupt:
     print("Shutting down...")
     client.loop_stop()

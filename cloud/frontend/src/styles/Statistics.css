@@ -1,12 +1,22 @@
 .statistics-container {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  position: sticky;
+  top: 70px;
+  z-index: 20;
+  padding-top: 0.75rem;
+  padding-bottom: 0;
+  background: var(--background);
+  backdrop-filter: blur(8px);
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 .statistics-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  padding-top: 2rem;
 }
 
 .statistics-title {
@@ -19,9 +29,16 @@
 
 .statistics-subtitle {
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.35rem;
   color: var(--muted-foreground);
   font-size: 1rem;
+}
+
+.statistics-entity-count {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.82rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
 }
 
 .statistics-selectors {
@@ -29,8 +46,223 @@
   align-items: flex-end;
   gap: 2rem;
   flex-wrap: wrap;
-  padding-bottom: 2rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
+}
+
+/* ── Custom date range picker ─────────────────── */
+
+.period-custom-range {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.period-custom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.period-date-input {
+  height: 40px;
+  padding: 0 0.75rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.period-date-input:hover,
+.period-date-input:focus { border-color: var(--accent); }
+
+.period-date-sep {
+  padding-bottom: 0.6rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+/* ── Recent entities chips ────────────────────── */
+
+.recent-entities-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recent-entities-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.recent-entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.recent-entity-chip:hover {
+  border-color: var(--accent);
+  color: var(--foreground);
+}
+
+.recent-entity-chip.active {
+  background: var(--muted);
+  border-color: var(--accent);
+  color: var(--foreground);
+}
+
+.recent-entity-unit {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.recent-entities-clear {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.recent-entities-clear:hover {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+/* ── Period date hint ─────────────────────────── */
+
+.period-date-hint {
+  display: inline;
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  letter-spacing: 0.01em;
+}
+
+.period-date-hint-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.period-date-hint-clickable:hover {
+  color: var(--foreground);
+}
+
+.period-date-hint-edit {
+  margin-left: 0.3rem;
+  font-size: 0.68rem;
+  opacity: 0.6;
+}
+
+/* ── Entity info bar ──────────────────────────── */
+
+.entity-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.entity-info-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.entity-info-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.entity-info-device {
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+}
+
+.entity-info-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.entity-info-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.entity-info-unit-badge {
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.1);
+  color: var(--accent);
+  border-color: var(--accent);
+  opacity: 0.8;
+}
+
+.entity-info-meta {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+/* ── No sensors empty state ───────────────────── */
+
+.stats-no-sensors {
+  max-width: 480px;
+  margin: 4rem auto;
+  text-align: center;
+}
+
+.stats-no-sensors-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.75rem;
+}
+
+.stats-no-sensors-desc {
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
 }
 
 .selector-group {
@@ -133,6 +365,10 @@
   gap: 1rem;
 }
 
+.stat-cards-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -180,6 +416,43 @@
 .stat-card-divider {
   border-top: 1px solid var(--border);
   margin: 0.6rem 0 0.4rem;
+}
+
+.stat-card-history {
+  justify-content: space-between;
+}
+
+.history-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+  margin-top: 0.35rem;
+}
+
+.history-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.history-row-period {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  min-width: 5.5rem;
+  flex-shrink: 0;
+}
+
+.history-row-value {
+  color: var(--foreground);
+  font-weight: 600;
+  flex: 1;
+}
+
+.history-row-cost {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
 }
 
 .stats-loading {
@@ -231,6 +504,13 @@
   border-radius: 2px;
   flex-shrink: 0;
   border: 1px solid var(--accent);
+}
+
+.legend-note {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  align-self: center;
 }
 
 .daynight-stats {
@@ -391,6 +671,110 @@
   color: var(--foreground);
 }
 
+/* Overview card — special states */
+.overview-reset-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warning, #f59e0b) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 35%, transparent);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.overview-reset-detail {
+  font-weight: 400;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+/* Reset history section */
+.reset-history {
+  margin-bottom: 1rem;
+  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 40%, var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.reset-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.9rem;
+  background: color-mix(in srgb, var(--warning, #f59e0b) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 25%, var(--border));
+}
+
+.reset-history-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.reset-history-count {
+  font-size: 0.72rem;
+  background: color-mix(in srgb, var(--warning, #f59e0b) 22%, transparent);
+  color: var(--foreground);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.reset-history-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.reset-history-row:last-of-type {
+  border-bottom: none;
+}
+
+.reset-history-date {
+  font-weight: 500;
+  color: var(--foreground);
+  min-width: 110px;
+}
+
+.reset-history-values {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted-foreground);
+}
+
+.reset-history-delta {
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.reset-history-more {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin: 0;
+  font-style: italic;
+  border-top: 1px solid var(--border);
+}
+
+.overview-low-readings-warning {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--warning, #f59e0b);
+  background: color-mix(in srgb, var(--warning, #f59e0b) 8%, transparent);
+  border-radius: 0 6px 6px 0;
+}
+
 /* Consumption notes */
 .consumption-note {
   font-size: 0.78rem;
@@ -422,8 +806,46 @@
 .prediction-accuracy-note {
   font-size: 0.75rem;
   color: var(--muted-foreground);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   line-height: 1.5;
+}
+
+.prediction-model-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  font-size: 0.73rem;
+}
+
+.model-active-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.model-badge-ridge_regression {
+  background: color-mix(in srgb, #8b5cf6 18%, transparent);
+  color: #8b5cf6;
+}
+
+.model-badge-random_forest {
+  background: color-mix(in srgb, #10b981 18%, transparent);
+  color: #10b981;
+}
+
+.model-data-count {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.model-tier-info {
+  color: var(--muted-foreground);
+  opacity: 0.75;
 }
 
 .forecast-note {
@@ -472,6 +894,13 @@
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
+  border-radius: 4px;
+  outline: none;
+}
+
+.anomaly-collapse-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .anomaly-collapse-header .stats-section-title {

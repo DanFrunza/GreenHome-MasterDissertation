@@ -34,15 +34,28 @@ export function UserProvider({ children }) {
     const token = getToken()
     if (!token) { setLoading(false); return }
 
-    fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => {
-        if (!r.ok) throw new Error('invalid')
-        return r.json()
-      })
-      .then(setUser)
-      .catch(logout)
-      .finally(() => setLoading(false))
-  }, [])
+    const tryFetch = async () => {
+      for (let i = 0; i < 3; i++) {
+        try {
+          const r = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+          if (r.status === 401) { logout(); return }
+          if (!r.ok) return
+          setUser(await r.json())
+          return
+        } catch {
+          if (i < 2) await new Promise(res => setTimeout(res, 500))
+        }
+      }
+    }
+
+    tryFetch().finally(() => setLoading(false))
+  }, [logout])
+
+  useEffect(() => {
+    const theme = user?.theme ?? 'light'
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [user?.theme])
 
   useEffect(() => {
     window.addEventListener('auth:unauthorized', logout)

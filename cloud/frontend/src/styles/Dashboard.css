@@ -1,6 +1,6 @@
 .dashboard-container {
   padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
 }
 
 .dashboard-title {
@@ -13,16 +13,66 @@
 
 .dashboard-subtitle {
   margin-top: 0;
-  margin-bottom: 2rem;
+  margin-bottom: 0.15rem;
   color: var(--muted-foreground);
   font-size: 1rem;
   font-weight: var(--font-weight-normal);
+}
+
+.page-stats {
+  margin: 0 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
 }
 
 .dashboard-devices {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding-bottom: 3rem;
+}
+
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-section-toggle:hover .dashboard-section-title {
+  color: var(--foreground);
+}
+
+.dashboard-section-title {
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+}
+
+.dashboard-section-title.online  { color: var(--status-online); }
+.dashboard-section-title.offline { color: var(--status-offline); }
+
+.dashboard-section-count {
+  font-weight: var(--font-weight-normal);
+  font-size: 0.85rem;
+}
+
+.dashboard-section-chevron {
+  font-size: 0.6rem;
+  color: var(--muted-foreground);
 }
 
 .dashboard-error {

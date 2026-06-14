@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { API_URL } from '../config'
 import { apiFetch } from '../utils/api'
+import { formatSensorValue } from '../utils/formatValue'
 
 const MODEL_LABELS = {
   seasonal_naive:   'Seasonal Forecast',
@@ -20,8 +21,17 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
   const [loading,   setLoading]   = useState(true)
   const [noData,    setNoData]    = useState(false)
   const [tooltip,   setTooltip]   = useState(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
-  const isEnergyKwh = deviceClass === 'energy'
+  const isEnergyKwh = deviceClass === 'energy' || unit === 'kWh'
+
+  // ResizeObserver — rulează și după loading (când containerRef apare în DOM)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver(entries => setContainerWidth(entries[0].contentRect.width))
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [loading, noData])
 
   // ── Fetch ───────────────────────────────────────────────────────────────────
 
@@ -40,7 +50,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
       apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/predictions`)
         .then(r => r.json()),
     ]).then(([aggRows, predRows]) => {
-      // Historical daily data
+      // Istorice zilnice
       const hist = (Array.isArray(aggRows) ? aggRows : []).map(r => ({
         date:  new Date(r.period_start),
         value: isEnergyKwh
@@ -48,7 +58,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
           : parseFloat(r.avg_value),
       })).filter(d => d.value != null && !isNaN(d.value))
 
-      // Aggregate hourly predictions → daily
+      // Agregă predicțiile orare → zilnice
       const byDay = {}
       ;(Array.isArray(predRows) ? predRows : []).forEach(p => {
         const d   = new Date(p.target_time)
@@ -61,13 +71,14 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         byDay[key].values.push(Math.max(0, parseFloat(p.predicted_value)))
       })
 
+      const sevenDaysOut = new Date(Date.now() + 7 * 86400 * 1000)
       const pred = Object.values(byDay).map(d => ({
         date:      d.date,
         value:     isEnergyKwh
-          ? d.values.reduce((s, v) => s + v, 0)                         // sum deltas → daily kWh
-          : d.values.reduce((s, v) => s + v, 0) / d.values.length,      // mean → avg power/value
+          ? d.values.reduce((s, v) => s + v, 0)
+          : d.values.reduce((s, v) => s + v, 0) / d.values.length,
         modelType: d.modelType,
-      })).sort((a, b) => a.date - b.date)
+      })).filter(d => d.date <= sevenDaysOut).sort((a, b) => a.date - b.date)
 
       if (!hist.length && !pred.length) { setNoData(true); setLoading(false); return }
 
@@ -81,9 +92,8 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
   // ── Draw ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if ((!histData.length && !predData.length) || !svgRef.current || !containerRef.current) return
+    if ((!histData.length && !predData.length) || !svgRef.current || !containerRef.current || !containerWidth) return
 
-    const containerWidth = containerRef.current.getBoundingClientRect().width || 600
     const margin = { top: 12, right: 16, bottom: 36, left: 52 }
     const width  = containerWidth
     const height = 200
@@ -96,14 +106,24 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
     const allDates = allData.map(d => d.date)
     const allVals  = allData.map(d => d.value).filter(v => v != null && !isNaN(v))
 
+    const [xMin, xMax] = d3.extent(allDates)
+    const xDomain = xMin.getTime() === xMax.getTime()
+      ? [new Date(xMin.getTime() - 12 * 3600000), new Date(xMax.getTime() + 12 * 3600000)]
+      : [xMin, xMax]
     const xScale = d3.scaleTime()
-      .domain(d3.extent(allDates))
+      .domain(xDomain)
       .range([margin.left, width - margin.right])
 
     const [minV, maxV] = d3.extent(allVals)
-    const pad    = (maxV - minV) * 0.15 || 1
+    const pad = (maxV - minV) * 0.15 || 1
+
+    // Extinde domeniul y să includă și limita superioară a benzii de incertitudine
+    const bandFactor = uncertaintyPct / 100
+    const bandMax    = predData.length
+      ? d3.max(predData, d => d.value * (1 + bandFactor))
+      : maxV
     const yScale = d3.scaleLinear()
-      .domain([Math.max(0, minV - pad), maxV + pad])
+      .domain([Math.max(0, minV - pad), Math.max(maxV, bandMax) + pad])
       .range([height - margin.bottom, margin.top])
 
     // Grid
@@ -113,16 +133,17 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
       .attr('y1', d => yScale(d)).attr('y2', d => yScale(d))
       .attr('stroke', 'var(--border)').attr('stroke-width', 1)
 
-    const lineGen = d3.line()
+    /** @type {import('d3').Line<{date: Date, value: number|null, modelType?: string}>} */
+    const lineGen = /** @type {any} */ (d3.line())
       .x(d => xScale(d.date))
       .y(d => yScale(d.value))
       .defined(d => d.value != null && !isNaN(d.value))
       .curve(d3.curveMonotoneX)
 
-    // Forecast shaded uncertainty band (±uncertaintyPct%)
+    // Bandă incertitudine (±uncertaintyPct%)
     if (predData.length > 1) {
-      const bandFactor = uncertaintyPct / 100
-      const areaGen = d3.area()
+      /** @type {import('d3').Area<{date: Date, value: number, modelType?: string}>} */
+      const areaGen = /** @type {any} */ (d3.area())
         .x(d => xScale(d.date))
         .y0(d => yScale(Math.max(0, d.value * (1 - bandFactor))))
         .y1(d => yScale(d.value * (1 + bandFactor)))
@@ -134,7 +155,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', areaGen)
     }
 
-    // Historical line
+    // Linie istorică
     if (histData.length) {
       svg.append('path')
         .datum(histData)
@@ -143,8 +164,8 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', lineGen)
     }
 
-    // Bridge: last historical → first predicted (subtle dashed connector)
-    const lastHist = histData[histData.length - 1]
+    // Conector: ultimul punct istoric → primul punct de prognoză
+    const lastHist  = histData[histData.length - 1]
     const firstPred = predData[0]
     if (lastHist && firstPred) {
       svg.append('line')
@@ -154,7 +175,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('stroke-dasharray', '4 3').attr('opacity', 0.45)
     }
 
-    // Forecast line (dashed)
+    // Linie prognoză (punctată)
     if (predData.length) {
       svg.append('path')
         .datum(predData)
@@ -164,7 +185,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', lineGen)
     }
 
-    // "Now" divider
+    // Linie "Now"
     const nowMidnight = new Date()
     nowMidnight.setHours(0, 0, 0, 0)
     const nowX = xScale(nowMidnight)
@@ -180,14 +201,14 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .text('Now')
     }
 
-    // Dots (interactive)
+    // Puncte interactive
     const allDots = allData.filter(d => d.value != null && !isNaN(d.value))
     svg.append('g').selectAll('circle')
       .data(allDots).join('circle')
       .attr('cx', d => xScale(d.date)).attr('cy', d => yScale(d.value))
       .attr('r', 3.5)
       .attr('fill', 'var(--accent)')
-      .attr('opacity', d => d.modelType ? 0.5 : 1)  // predicted dots are dimmer
+      .attr('opacity', d => d.modelType ? 0.5 : 1)
       .style('cursor', 'crosshair')
       .on('mouseenter', function (event, d) {
         d3.select(this).attr('r', 5)
@@ -199,7 +220,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         setTooltip(null)
       })
 
-    // Axes
+    // Axe
     svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(xScale).ticks(7).tickFormat(d3.timeFormat('%b %d')).tickSize(0))
@@ -210,17 +231,15 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
     svg.append('g')
       .attr('transform', `translate(${margin.left},0)`)
       .call(d3.axisLeft(yScale).ticks(4).tickSize(0)
-        .tickFormat(v => d3.format('.2~f')(v) + (unit ? ` ${unit}` : '')))
+        .tickFormat(v => formatSensorValue(v, deviceClass) + (unit ? ` ${unit}` : '')))
       .call(g => g.select('.domain').remove())
       .call(g => g.selectAll('text')
         .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.68rem')
         .attr('x', -6).attr('text-anchor', 'end'))
 
-  }, [histData, predData, unit, deviceClass])
+  }, [histData, predData, unit, deviceClass, uncertaintyPct, containerWidth])
 
   // ── Render ──────────────────────────────────────────────────────────────────
-
-  const fmtVal = v => `${Number(v).toFixed(2)}${unit ? ` ${unit}` : ''}`
 
   if (loading) return <p className="stats-loading">Loading...</p>
   if (noData)  return (
@@ -253,16 +272,21 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
       </div>
 
       <div ref={containerRef} style={{ width: '100%' }}>
-        <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+        <svg ref={svgRef} style={{ display: 'block' }} />
       </div>
 
       {tooltip && (
-        <div className="heatmap-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y - 10 }}>
+        <div className="heatmap-tooltip" style={{
+          left: tooltip.x + 14 + 160 > containerWidth ? Math.max(0, tooltip.x - 174) : tooltip.x + 14,
+          top:  tooltip.y - 10,
+        }}>
           <span className="heatmap-tooltip-label">
             {tooltip.d.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             {tooltip.d.modelType ? ' · Forecast' : ' · Historical'}
           </span>
-          <span className="heatmap-tooltip-value">{fmtVal(tooltip.d.value)}</span>
+          <span className="heatmap-tooltip-value">
+            {formatSensorValue(tooltip.d.value, deviceClass)}{unit ? ` ${unit}` : ''}
+          </span>
         </div>
       )}
     </div>

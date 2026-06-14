@@ -1,7 +1,9 @@
 import asyncio
 import json
+import threading
 import websockets
 from config import HA_URL, HA_TOKEN
+from handlers.ha_retry import ha_call
 
 HA_WS_URL = HA_URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
 
@@ -48,14 +50,17 @@ async def _fetch_automations():
 
     return automations
 
-def handle_automation_discovery(client, payload):
-    print("[automation_discovery] Fetching automations from HA via WebSocket...")
-    try:
-        automations = asyncio.run(_fetch_automations())
-    except Exception as e:
-        print(f"[automation_discovery] Error: {e}")
-        return
+def handle_automation_discovery(client, payload, retry_forever=False):
+    def _run():
+        print("[automation_discovery] Fetching automations from HA via WebSocket...")
+        max_attempts = None if retry_forever else 3
+        try:
+            automations = asyncio.run(ha_call(_fetch_automations, max_attempts=max_attempts))
+        except Exception as e:
+            print(f"[automation_discovery] Failed after retries: {e}")
+            return
+        result = json.dumps({"automations": automations})
+        client.publish("home/system/automation_discovery", result, qos=1)
+        print(f"[automation_discovery] Published {len(automations)} automations")
 
-    result = json.dumps({"automations": automations})
-    client.publish("home/system/automation_discovery", result, qos=1)
-    print(f"[automation_discovery] Published {len(automations)} automations")
+    threading.Thread(target=_run, daemon=True).start()

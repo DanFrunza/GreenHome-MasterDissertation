@@ -10,6 +10,6 @@ export function effectiveTariff(tariff) {
   const peakH       = e > s ? e - s : 24 - s + e
   const offpeakH    = 24 - peakH
   const weekdayRate = (peakH * (peak || flat || 0) + offpeakH * (offpeak || flat || 0)) / 24
-  const weekendRate = weekend || weekdayRate
+  const weekendRate = (tariff.tariff_weekend != null && !isNaN(weekend)) ? weekend : weekdayRate
   return (5 * weekdayRate + 2 * weekendRate) / 7
 }

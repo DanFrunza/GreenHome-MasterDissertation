@@ -6,7 +6,7 @@ const pool = require('../db')
 router.get('/me/homes', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT h.id, h.name, h.status, h.last_seen, h.created_at, uh.role
+            SELECT h.id, h.name, h.status, h.agent_status, h.last_seen, h.created_at, uh.role
             FROM homes h
             JOIN user_homes uh ON h.id = uh.home_id
             WHERE uh.user_id = $1

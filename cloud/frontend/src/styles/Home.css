@@ -230,6 +230,23 @@
   color: var(--muted-foreground);
 }
 
+.home-card-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.agent-offline-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  flex-shrink: 0;
+  cursor: default;
+}
+
 .tips-card {
   background-color: var(--card);
   border: 1px solid var(--border);
@@ -238,6 +255,39 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   margin-bottom: 2rem;
 }
+
+.tips-card-classify {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.tips-classify-icon { font-size: 1.4rem; }
+
+.tips-classify-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.tips-classify-body {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.tips-classify-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  margin-top: 0.25rem;
+}
+
+.tips-classify-link:hover { text-decoration: underline; }
 
 .tips-card-header {
   display: flex;
@@ -268,6 +318,20 @@
   background: var(--muted);
   border-radius: 999px;
 }
+
+.tips-impact {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.tips-impact-high   { background: rgba(34,  197, 94,  0.1); color: #22c55e; border-color: rgba(34,  197, 94,  0.3); }
+.tips-impact-medium { background: rgba(245, 158, 11,  0.1); color: #f59e0b; border-color: rgba(245, 158, 11,  0.3); }
+.tips-impact-low    { background: var(--muted); color: var(--muted-foreground); border-color: var(--border); }
 
 .tips-nav {
   display: flex;

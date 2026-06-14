@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const pool = require('../db');
+const { requireOwner } = require('../middleware/ownership');
 
 // GET /homes/:home_id/automations
 router.get('/', async (req, res) => {
@@ -14,8 +15,10 @@ router.get('/', async (req, res) => {
                 a.enabled,
                 a.mode,
                 a.last_triggered,
-                COALESCE(
-                    JSON_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                a.raw_config,
+                a.ha_entity_id,
+                COALESCE((
+                    SELECT JSON_AGG(JSONB_BUILD_OBJECT(
                         'trigger_type', t.trigger_type,
                         'entity_id',    t.entity_id,
                         'above',        t.above,
@@ -24,38 +27,34 @@ router.get('/', async (req, res) => {
                         'to_state',     t.to_state,
                         'at_time',      t.at_time,
                         'event_type',   t.event_type
-                    )) FILTER (WHERE t.id IS NOT NULL),
-                    '[]'
-                ) AS triggers,
-                COALESCE(
-                    JSON_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                    ) ORDER BY t.id)
+                    FROM automation_triggers t
+                    WHERE t.home_id = a.home_id AND t.automation_id = a.automation_id
+                ), '[]') AS triggers,
+                COALESCE((
+                    SELECT JSON_AGG(JSONB_BUILD_OBJECT(
                         'condition_type', c.condition_type,
                         'entity_id',      c.entity_id,
                         'above',          c.above,
                         'below',          c.below,
                         'state_value',    c.state_value,
                         'template_text',  c.template_text
-                    )) FILTER (WHERE c.id IS NOT NULL),
-                    '[]'
-                ) AS conditions,
-                COALESCE(
-                    JSON_AGG(JSONB_BUILD_OBJECT(
+                    ) ORDER BY c.id)
+                    FROM automation_conditions c
+                    WHERE c.home_id = a.home_id AND c.automation_id = a.automation_id
+                ), '[]') AS conditions,
+                COALESCE((
+                    SELECT JSON_AGG(JSONB_BUILD_OBJECT(
                         'action_type', ac.action_type,
                         'service',     ac.service,
                         'entity_id',   ac.entity_id,
                         'delay',       ac.delay
-                    ) ORDER BY ac.action_order) FILTER (WHERE ac.id IS NOT NULL),
-                    '[]'
-                ) AS actions
+                    ) ORDER BY ac.action_order)
+                    FROM automation_actions ac
+                    WHERE ac.home_id = a.home_id AND ac.automation_id = a.automation_id
+                ), '[]') AS actions
             FROM automations a
-            LEFT JOIN automation_triggers t
-                ON t.home_id = a.home_id AND t.automation_id = a.automation_id
-            LEFT JOIN automation_conditions c
-                ON c.home_id = a.home_id AND c.automation_id = a.automation_id
-            LEFT JOIN automation_actions ac
-                ON ac.home_id = a.home_id AND ac.automation_id = a.automation_id
             WHERE a.home_id = $1
-            GROUP BY a.automation_id, a.home_id
             ORDER BY a.alias
         `, [home_id]);
         res.json(result.rows);
@@ -83,7 +82,7 @@ router.post('/refresh', async (req, res) => {
 });
 
 // POST /homes/:home_id/automations/:automation_id/enable
-router.post('/:automation_id/enable', async (req, res) => {
+router.post('/:automation_id/enable', requireOwner, async (req, res) => {
     const { home_id, automation_id } = req.params;
     const mqttServiceUrl = process.env.MQTT_SERVICE_URL || 'http://mqtt-service:5000';
     try {
@@ -110,7 +109,7 @@ router.post('/:automation_id/enable', async (req, res) => {
 });
 
 // POST /homes/:home_id/automations/:automation_id/disable
-router.post('/:automation_id/disable', async (req, res) => {
+router.post('/:automation_id/disable', requireOwner, async (req, res) => {
     const { home_id, automation_id } = req.params;
     const mqttServiceUrl = process.env.MQTT_SERVICE_URL || 'http://mqtt-service:5000';
     try {

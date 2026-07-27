@@ -9,7 +9,7 @@ export function isFaultSensor(entity) {
   return FAULT_CLASSES.has(entity.device_class)
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function countAnomalies(anomalies, entityId, days, severity = null) {
   const from = Date.now() - days * 86400 * 1000
@@ -29,7 +29,7 @@ function ov(overview, field) {
   return parseFloat(overview[field])
 }
 
-// ─── Device-level rules ───────────────────────────────────────────────────────
+//  Device-level rules 
 // Each function receives the full device (all entities), anomalies array,
 // and entityOverviews map — enabling cross-entity correlations.
 
@@ -983,7 +983,7 @@ const GENERIC_ENTITY_RULES = {
   },
 }
 
-// ─── Overview fetch requirements ──────────────────────────────────────────────
+// Overview fetch requirements 
 // device_class → days of history needed, per appliance_type.
 
 const DEEP_FETCH = {

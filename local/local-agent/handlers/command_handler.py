@@ -1,3 +1,4 @@
+# Forwards on/off commands from the cloud to Home Assistant via the WebSocket API.
 import asyncio
 import json
 import websockets
@@ -31,6 +32,7 @@ def handle_command(entity_id, payload):
         print(f"[COMMAND] Invalid payload: {payload!r}")
         return
 
+    # Derive domain and service from the entity_id (e.g. switch.fan → switch.turn_on)
     domain = entity_id.split(".")[0]
     service = f"turn_{action}"
 

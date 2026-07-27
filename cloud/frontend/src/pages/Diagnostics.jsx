@@ -23,7 +23,7 @@ const PERIODS = [
 
 const ANOMALY_FETCH_LIMIT = 2000
 
-// ─── Card 1 — Hardware Alerts ─────────────────────────────────────────────────
+// Card 1 — Hardware Alerts 
 
 function HardwareAlertsCard({ devices, homeId, from, to }) {
   const faultGroups = useMemo(() => {
@@ -136,7 +136,7 @@ function HardwareAlertsCard({ devices, homeId, from, to }) {
   )
 }
 
-// ─── Card 2 — Anomalies ───────────────────────────────────────────────────────
+// Card 2 — Anomalies
 
 function AnomaliesCard({ anomalies30D, devices, homeId, initialEntity, from, to, periodLabel, hasMore, anomalyLoading }) {
   const navigate = useNavigate()
@@ -220,15 +220,16 @@ function AnomaliesCard({ anomalies30D, devices, homeId, initialEntity, from, to,
   const dismissed_ = filtered.filter(a =>  dismissed.has(a.id))
   const visible    = showDismissed ? filtered : active
 
-  const today     = new Date().toLocaleDateString()
-  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString()
+  const toKey = d => { const l = new Date(d); return `${l.getFullYear()}-${String(l.getMonth()+1).padStart(2,'0')}-${String(l.getDate()).padStart(2,'0')}` }
+  const today     = toKey(new Date())
+  const yesterday = toKey(Date.now() - 86400000)
   const dayLabel  = key =>
     key === today ? 'Today' : key === yesterday ? 'Yesterday'
-    : new Date(key).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : new Date(key + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
   const groups = {}
   visible.forEach(a => {
-    const key = new Date(a.detected_at).toLocaleDateString()
+    const key = toKey(a.detected_at)
     ;(groups[key] ??= []).push(a)
   })
   const sortedKeys = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a))
@@ -406,7 +407,7 @@ function AnomaliesCard({ anomalies30D, devices, homeId, initialEntity, from, to,
   )
 }
 
-// ─── Card 3 — Anomaly Management ─────────────────────────────────────────────
+// Card 3 — Anomaly Management 
 
 function AnomalyManagementCard({ devices, homeId }) {
   const [search, setSearch]       = useState('')
@@ -584,7 +585,7 @@ function AnomalyManagementCard({ devices, homeId }) {
   )
 }
 
-// ─── Card 4 — Device Health ───────────────────────────────────────────────────
+// Card 4 — Device Health 
 
 function DeviceHealthCard({ devices, anomalies, entityOverviews, fromDate, periodLabel, anomalyLoading }) {
   const navigate = useNavigate()
@@ -758,7 +759,7 @@ function DeviceHealthCard({ devices, anomalies, entityOverviews, fromDate, perio
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// Page 
 
 export default function Diagnostics() {
   usePageTitle('Diagnostics')
@@ -766,7 +767,7 @@ export default function Diagnostics() {
   const [searchParams] = useSearchParams()
   const initialEntity = searchParams.get('entity') || ''
 
-  // ── Period state ────────────────────────────────────────────────────────────
+  //  Period state 
   const [period, setPeriod]                     = useState('30D')
   const [customFrom, setCustomFrom]             = useState('')
   const [customTo, setCustomTo]                 = useState('')
@@ -792,7 +793,7 @@ export default function Diagnostics() {
   const periodLabel = period === 'custom' ? 'the selected range'
     : `the last ${activePeriod.label.toLowerCase()}`
 
-  // ── Data ────────────────────────────────────────────────────────────────────
+  // Data 
   const [devices, setDevices]                 = useState([])
   const [anomalies, setAnomalies]             = useState([])
   const [entityOverviews, setEntityOverviews] = useState({})

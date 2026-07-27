@@ -662,3 +662,49 @@
   font-size: 0.875rem;
   color: var(--foreground);
 }
+
+@media (max-width: 768px) {
+  .devices-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .devices-header-right {
+    width: 100%;
+    flex-wrap: wrap;
+    margin-top: 0;
+  }
+  .devices-search-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  .devices-search-input {
+    width: 100%;
+  }
+  .classification-select {
+    min-width: 0;
+    width: 100%;
+  }
+  .device-classification-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .attribute-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .entity-ha-id {
+    max-width: 140px;
+  }
+  .devices-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attribute-name {
+    min-width: 0;
+  }
+  .entity-ha-id {
+    max-width: 100px;
+  }
+}

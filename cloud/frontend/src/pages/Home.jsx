@@ -36,15 +36,16 @@ function AnomaliesCard({ homeId }) {
   const active = (anomalies || []).filter(a => !dismissed.has(a.id) && !a.anomaly_suppressed && !a.anomaly_muted)
   if (!active.length) return null
 
-  const today     = new Date().toLocaleDateString()
-  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString()
+  const toKey = d => { const l = new Date(d); return `${l.getFullYear()}-${String(l.getMonth()+1).padStart(2,'0')}-${String(l.getDate()).padStart(2,'0')}` }
+  const today     = toKey(new Date())
+  const yesterday = toKey(Date.now() - 86400000)
   const dayLabel  = key =>
     key === today ? 'Today' : key === yesterday ? 'Yesterday'
-    : new Date(key).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : new Date(key + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
   const groups = {}
   active.forEach(a => {
-    const key = new Date(a.detected_at).toLocaleDateString()
+    const key = toKey(a.detected_at)
     ;(groups[key] ??= []).push(a)
   })
   const sortedKeys = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a))
@@ -198,6 +199,114 @@ function TipsCard({ homeId }) {
   )
 }
 
+function OnboardingCard({ user, homes }) {
+  const key = `greennest_onboarding_dismissed_${user?.id}`
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(key) === '1')
+
+  const hasHome      = homes.length > 0
+  const hasOnline    = homes.some(h => h.status === 'online')
+
+  if (dismissed) return null
+
+  const dismiss = () => { localStorage.setItem(key, '1'); setDismissed(true) }
+
+  const steps = [
+    {
+      done: true,
+      icon: '🎉',
+      title: 'Account created',
+      desc: 'You\'re in! Your GreenNest account is ready to use.',
+    },
+    {
+      done: hasHome,
+      icon: hasHome ? '✅' : '🏠',
+      title: hasHome ? 'Home added' : 'Get a home',
+      desc: hasHome
+        ? `You have ${homes.length} home${homes.length > 1 ? 's' : ''} connected.`
+        : null,
+      cta: !hasHome ? (
+        <div className="onboarding-paths">
+          <div className="onboarding-path">
+            <span className="onboarding-path-label onboarding-path-demo">Try the demo</span>
+            <p className="onboarding-path-desc">
+              Join the <strong>home1</strong> demo in Settings — pre-loaded with real sensor data, anomalies, predictions and statistics. No devices needed.
+            </p>
+            <Link to="/settings" className="onboarding-path-link">Open Settings → Join a home</Link>
+          </div>
+          <div className="onboarding-path-sep">or</div>
+          <div className="onboarding-path">
+            <span className="onboarding-path-label onboarding-path-real">Connect your own HA</span>
+            <p className="onboarding-path-desc">
+              Create a home in Settings to get your MQTT credentials, then deploy the GreenNest local stack (broker + agent) alongside your Home Assistant.
+            </p>
+            <Link to="/settings" className="onboarding-path-link">Open Settings → Create a home</Link>
+          </div>
+        </div>
+      ) : null,
+    },
+    {
+      done: hasOnline,
+      icon: hasOnline ? '✅' : '🔗',
+      title: hasOnline ? 'Data flowing' : 'Connect the local stack',
+      desc: hasOnline
+        ? 'Sensor data is arriving from your home.'
+        : 'Deploy the GreenNest local stack (MQTT broker + local agent) on the same machine as Home Assistant. The broker bridges your HA state data to GreenNest; the agent handles device discovery.',
+      hide: !hasHome,
+    },
+    {
+      done: false,
+      icon: '📊',
+      title: 'Explore your analytics',
+      desc: 'Check Statistics for trends and forecasts, Diagnostics for anomaly management, the ROI Calculator for appliance upgrade estimates, and the Eco Guide for energy-saving tips.',
+      links: [
+        { to: '/statistics',  label: 'Statistics' },
+        { to: '/diagnostics', label: 'Diagnostics' },
+        { to: '/roi',         label: 'ROI Calculator' },
+        { to: '/eco-guide',   label: 'Eco Guide' },
+      ],
+      hide: !hasOnline,
+      alwaysOpen: true,
+    },
+  ]
+
+  const visibleSteps = steps.filter(s => !s.hide)
+
+  return (
+    <div className="onboarding-card">
+      <div className="onboarding-card-header">
+        <div className="onboarding-card-title-row">
+          <span className="onboarding-card-emoji">👋</span>
+          <div>
+            <p className="onboarding-card-title">Welcome to GreenNest!</p>
+            <p className="onboarding-card-sub">Here's what to do next to get the most out of the platform.</p>
+          </div>
+        </div>
+        <button className="onboarding-dismiss" onClick={dismiss} title="Dismiss">✕</button>
+      </div>
+
+      <div className="onboarding-steps">
+        {visibleSteps.map((step, i) => (
+          <div key={i} className={`onboarding-step ${step.done ? 'onboarding-step-done' : ''}`}>
+            <div className="onboarding-step-icon">{step.icon}</div>
+            <div className="onboarding-step-body">
+              <p className="onboarding-step-title">{step.title}</p>
+              {step.desc && <p className="onboarding-step-desc">{step.desc}</p>}
+              {step.cta}
+              {step.links && (
+                <div className="onboarding-step-links">
+                  {step.links.map(l => (
+                    <Link key={l.to} to={l.to} className="onboarding-step-link">{l.label} →</Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   usePageTitle()
   const { user } = useUser()
@@ -215,54 +324,12 @@ export default function Home() {
           Welcome{displayName ? `, ${displayName}` : ''}.
         </h1>
         <p className="home-welcome-sub">
-          GreenNest monitors your home's energy consumption, detects anomalies, and gives you actionable insights to reduce costs and improve comfort.
+          GreenNest is an analytics layer for Home Assistant — monitor energy consumption, detect anomalies, and get actionable insights from your smart home data.
         </p>
       </div>
 
-      {/* Getting started — only shown when no homes enrolled yet */}
-      {homes.length === 0 && (
-        <div className="home-getting-started">
-          <div className="home-gs-card">
-            <div className="home-gs-icon home-gs-icon-demo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
-                <circle cx="12" cy="12" r="10" />
-                <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
-              </svg>
-            </div>
-            <div className="home-gs-body">
-              <p className="home-gs-title">Try the demo</p>
-              <p className="home-gs-desc">
-                Join <strong>home1</strong> in Settings to explore real energy data — charts, anomaly detection, predictions and more.
-              </p>
-              <Link to="/settings" className="home-gs-link">Open Settings →</Link>
-            </div>
-          </div>
-
-          <div className="home-gs-card">
-            <div className="home-gs-icon home-gs-icon-connect">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
-                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-                <path d="M9 21V12h6v9" />
-              </svg>
-            </div>
-            <div className="home-gs-body">
-              <p className="home-gs-title">Connect your real home</p>
-              <ol className="home-gs-steps">
-                <li>Create a home in Settings — you'll receive a unique home ID and MQTT credentials.</li>
-                <li>
-                  Install <strong>GreenNest Local Agent</strong> on your home server.{' '}
-                  <span className="home-gs-badge">Coming soon</span>
-                </li>
-                <li>
-                  Install <strong>GreenNest Local Broker</strong>.{' '}
-                  <span className="home-gs-badge">Coming soon</span>
-                </li>
-                <li>Add the credentials to your config — tutorials coming soon.</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Onboarding card */}
+      <OnboardingCard user={user} homes={homes} />
 
       {/* Homes list */}
       {homes.length > 0 && (

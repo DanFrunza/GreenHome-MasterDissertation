@@ -1,7 +1,9 @@
+# Air purifier + PM2.5 sensor simulation
 import time
 import random
 import paho.mqtt.client as mqtt
 
+# MQTT topics for this virtual device
 MQTT_BROKER = "mqtt-local"
 MQTT_PORT = 1883
 HOME_PREFIX = "home"
@@ -14,6 +16,7 @@ POWER_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/power"
 AVAIL_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/available"
 CONTROL_TOPIC  = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/control"
 
+# Simulation state
 pm25 = 30.0
 purifier_on = False
 POWER_W = 40
@@ -21,6 +24,7 @@ PM25_MIN = 2.0
 PM25_MAX = 120.0
 INTERVAL = 5
 
+# MQTT callbacks
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print(f"[{DEVICE_ID}] Connected")
@@ -42,6 +46,7 @@ def on_message(client, userdata, msg):
 def on_disconnect(client, userdata, rc):
     print(f"[{DEVICE_ID}] Disconnected: {rc}")
 
+# Connect with last-will so the broker marks the device offline on disconnect
 client = mqtt.Client(client_id=DEVICE_ID)
 client.will_set(AVAIL_TOPIC, "offline", qos=1, retain=True)
 client.on_connect = on_connect
@@ -52,6 +57,7 @@ client.loop_start()
 
 try:
     while True:
+        # PM2.5 drops when purifier is on, accumulates slowly otherwise
         if purifier_on:
             pm25 -= random.uniform(0.7, 1.2)
         else:

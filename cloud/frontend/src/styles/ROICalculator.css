@@ -425,3 +425,19 @@
   color: var(--muted-foreground);
   line-height: 1.8;
 }
+
+@media (max-width: 768px) {
+  .roi-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .roi-results-grid {
+    grid-template-columns: 1fr;
+  }
+  .roi-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

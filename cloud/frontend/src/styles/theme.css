@@ -99,6 +99,19 @@ html {
   font-size: var(--font-size);
 }
 
+@media (max-width: 1600px) {
+  html { font-size: 14px; }
+}
+@media (max-width: 1024px) {
+  html { font-size: 13px; }
+}
+@media (max-width: 768px) {
+  html { font-size: 13px; }
+}
+@media (max-width: 480px) {
+  html { font-size: 12px; }
+}
+
 /* Headings */
 h1 {
   font-size: 2rem;

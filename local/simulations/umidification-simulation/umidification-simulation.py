@@ -1,7 +1,9 @@
+# Humidifier + humidity sensor simulation
 import time
 import random
 import paho.mqtt.client as mqtt
 
+# MQTT topics for this virtual device
 MQTT_BROKER = "mqtt-local"
 MQTT_PORT = 1883
 HOME_PREFIX = "home"
@@ -14,6 +16,7 @@ POWER_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/power"
 AVAIL_TOPIC    = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/available"
 CONTROL_TOPIC  = f"{HOME_PREFIX}/mqtt/device/{DEVICE_ID}/control"
 
+# Simulation state
 humidity = 50.0
 humidifier_on = False
 POWER_W = 30
@@ -21,6 +24,7 @@ HUMIDITY_MIN = 20.0
 HUMIDITY_MAX = 80.0
 INTERVAL = 5
 
+# MQTT callbacks
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print(f"[{DEVICE_ID}] Connected")
@@ -42,6 +46,7 @@ def on_message(client, userdata, msg):
 def on_disconnect(client, userdata, rc):
     print(f"[{DEVICE_ID}] Disconnected: {rc}")
 
+# Connect with last-will so the broker marks the device offline on disconnect
 client = mqtt.Client(client_id=DEVICE_ID)
 client.will_set(AVAIL_TOPIC, "offline", qos=1, retain=True)
 client.on_connect = on_connect
@@ -52,6 +57,7 @@ client.loop_start()
 
 try:
     while True:
+        # Humidity rises when humidifier is on, evaporates slowly otherwise
         if humidifier_on:
             humidity += random.uniform(0.5, 1.5)
         else:

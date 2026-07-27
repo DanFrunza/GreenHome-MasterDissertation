@@ -5,7 +5,7 @@ import { apiFetch } from '../utils/api'
 import { HOUR_LABELS } from '../utils/chartUtils'
 import { formatSensorValue } from '../utils/formatValue'
 
-// Săptămâna începe luni (standard EU/ISO)
+// Week starts on Monday (EU/ISO standard)
 const DOW_ORDER  = [1, 2, 3, 4, 5, 6, 0]
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -25,7 +25,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
   const [tooltip, setTooltip]             = useState(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
-  // ResizeObserver — rulează și când loading devine false (atunci apare containerRef în DOM)
+  // ResizeObserver — also runs when loading becomes false (when containerRef appears in the DOM)
   useEffect(() => {
     if (!containerRef.current) return
     const obs = new ResizeObserver(entries => setContainerWidth(entries[0].contentRect.width))
@@ -33,7 +33,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
     return () => obs.disconnect()
   }, [loading])
 
-  // Fetch date
+  // Fetch data
   useEffect(() => {
     if (!homeId || !entityId) return
     setLoading(true)
@@ -85,7 +85,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
       .catch(() => setLoading(false))
   }, [homeId, entityId, from, to, deviceClass])
 
-  // Draw cu D3
+  // Draw with D3
   useEffect(() => {
     if (!data.length || !svgRef.current || !containerRef.current || !containerWidth) return
     const filled = data.filter(d => d.avg_value != null)
@@ -103,7 +103,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
 
     const minVal = d3.min(filled, d => d.avg_value)
     const maxVal = d3.max(filled, d => d.avg_value)
-    // Guard: dacă toate valorile sunt identice, domain([x,x]) produce NaN în colorScale
+    // Guard: if all values are identical, domain([x,x]) produces NaN in colorScale
     const domainMin = maxVal - minVal < 1e-10 ? minVal - 1 : minVal
     const domainMax = maxVal - minVal < 1e-10 ? maxVal + 1 : maxVal
     const colorScale = d3.scaleSequential()
@@ -112,7 +112,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
 
-    // Fundal peak hours (bandă verticală subtilă)
+    // Peak hour background (subtle vertical band)
     const hasPeak = tariff?.peak_start && tariff?.peak_end
     if (hasPeak) {
       for (let h = 0; h < 24; h++) {
@@ -126,7 +126,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
       }
     }
 
-    // Celule
+    // Cells
     g.selectAll('rect.cell')
       .data(data)
       .join(enter => enter.append('rect').attr('class', 'cell'))
@@ -147,7 +147,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
       })
       .on('mouseleave', () => setTooltip(null))
 
-    // Separator weekday / weekend — linie punctată între Vineri (row 4) și Sâmbătă (row 5)
+    // Weekday/weekend separator — dashed line between Friday (row 4) and Saturday (row 5)
     g.append('line')
       .attr('x1', 0).attr('y1', cellH * 5)
       .attr('x2', cellW * 24).attr('y2', cellH * 5)
@@ -155,7 +155,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
       .attr('stroke-dasharray', '4,3')
       .attr('pointer-events', 'none')
 
-    // Etichete y (zile) — weekend cu accent
+    // Y labels (days) — weekend highlighted
     DOW_LABELS.forEach((label, i) => {
       svg.append('text')
         .attr('x', margin.left - 6)
@@ -168,7 +168,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
         .text(label)
     })
 
-    // Etichete x (ore) — peak cu accent dacă tariful e configurat
+    // X labels (hours) — peak hours highlighted when tariff is configured
     const xG = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top + cellH * 7 + 10})`)
     ;[0, 3, 6, 9, 12, 15, 18, 21].forEach(h => {
@@ -180,7 +180,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
         .text(HOUR_LABELS[h])
     })
 
-    // ── Legendă ──────────────────────────────────────────────────────────
+    // ── Legend ───────────────────────────────────────────────────────────
     const legendW = Math.max(60, Math.min(200, width - margin.left - margin.right - 120))
     const legendH = 8
     const legendY = margin.top + cellH * 7 + 28
@@ -220,7 +220,7 @@ export default function HeatmapChart({ homeId, entityId, unit, from, to, deviceC
       .attr('fill', 'var(--muted-foreground)').attr('font-size', '0.65rem')
       .text('No data')
 
-    // Indicator „Peak hours" (dacă există)
+    // Peak hours legend indicator (if tariff is configured)
     if (hasPeak) {
       const pkX = ndX + 72
       svg.append('rect')

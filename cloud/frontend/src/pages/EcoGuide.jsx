@@ -7,7 +7,7 @@ import { inferDeviceName } from '../utils/deviceUtils'
 import InfoTooltip from '../components/InfoTooltip'
 import '../styles/EcoGuide.css'
 
-// ── Quick Wins data ────────────────────────────────────────────────────────────
+// Quick Wins data 
 const QUICK_WINS = [
   {
     title: 'Lower heating by 1°C',
@@ -98,7 +98,7 @@ const QUICK_WINS = [
 const ITEMS_PER_PAGE = 4
 const TOTAL_PAGES    = Math.ceil(QUICK_WINS.length / ITEMS_PER_PAGE)
 
-// ── Energy Tips data ───────────────────────────────────────────────────────────
+//  Energy Tips data 
 const TIP_CATEGORIES = ['All', 'Heating & Cooling', 'Lighting', 'Refrigeration', 'Laundry', 'Electronics', 'Water & Cooking', 'Windows & Insulation', 'Solar & Renewables']
 
 const ENERGY_TIPS = [
@@ -382,7 +382,7 @@ const effortColor = (effort) => {
 const TIPS_PER_PAGE  = 4
 const IMPACT_ORDER   = { High: 0, Medium: 1, Low: 2 }
 
-// ── Green Score ────────────────────────────────────────────────────────────────
+//  Green Score 
 const BENCHMARK_KWH = {
   fridge:             14,
   washing_machine:    15,
@@ -424,7 +424,7 @@ const GRADE_LABEL = {
 const scoreBarColor = score =>
   score >= 70 ? 'var(--status-online)' : score >= 40 ? '#eab308' : 'var(--status-offline)'
 
-// ── Automation Ideas data ──────────────────────────────────────────────────────
+// Automation Ideas data 
 const AUTO_CATEGORIES     = ['All', 'For You', 'Heating & Cooling', 'Lighting', 'Laundry & Appliances', 'Energy', 'Air Quality', 'Security']
 const AUTO_ITEMS_PER_PAGE = 4
 
@@ -740,7 +740,7 @@ const autoCategoryColor = (cat) => {
 const difficultyBadge = (d) =>
   d === 'Easy' ? 'eco-badge-green' : d === 'Medium' ? 'eco-badge-yellow' : 'eco-badge-red'
 
-// ── Component ──────────────────────────────────────────────────────────────────
+// Component
 export default function EcoGuide() {
   usePageTitle('Eco Guide')
   const { selectedHome } = useHome()

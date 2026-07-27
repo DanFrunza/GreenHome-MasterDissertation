@@ -83,7 +83,11 @@ def _watchdog_loop():
                     )
                     if cur.rowcount > 0:
                         offline_homes.add(home_id)
-                        print(f"[WATCHDOG] {home_id} → offline (last seen {last.strftime('%H:%M:%S')} UTC)")
+                        cur.execute(
+                            "UPDATE entities SET available = false WHERE home_id = %s",
+                            (home_id,)
+                        )
+                        print(f"[WATCHDOG] {home_id} → offline (last seen {last.strftime('%H:%M:%S')} UTC, {cur.rowcount} entities marked unavailable)")
             conn.commit()
             cur.close()
             conn.close()

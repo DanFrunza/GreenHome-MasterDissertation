@@ -274,6 +274,7 @@ export default function Statistics() {
   const [recentEntities, setRecentEntities]   = useState([])
   const [meterResets, setMeterResets]         = useState([])
   const [prevOverview, setPrevOverview]       = useState(null)
+  const [filtersOpen, setFiltersOpen]         = useState(true)
 
   useEffect(() => {
     if (!selectedHome) return
@@ -687,7 +688,25 @@ export default function Statistics() {
       </div>
 
       <div className="statistics-container">
-        <div className="statistics-selectors">
+        <div className="stat-filters-bar">
+          {!filtersOpen && (
+            <span className="stat-filters-summary">
+              {deviceFilter || 'All devices'}
+              {selectedEntity ? ` — ${selectedEntity.label}` : ''}
+              <span className="stat-filters-summary-period">
+                {period === 'custom' ? 'Custom' : PERIODS.find(p => p.key === period)?.label}
+              </span>
+            </span>
+          )}
+          <button
+            className="stat-filters-toggle"
+            onClick={() => setFiltersOpen(o => !o)}
+            title={filtersOpen ? 'Collapse filters' : 'Expand filters'}
+          >
+            {filtersOpen ? '▲ Hide filters' : '▼ Filters'}
+          </button>
+        </div>
+        {filtersOpen && <div className="statistics-selectors">
           <div className="selector-group">
             <label className="selector-label">Device</label>
             <select
@@ -851,7 +870,7 @@ export default function Statistics() {
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
       {selectedEntity && (

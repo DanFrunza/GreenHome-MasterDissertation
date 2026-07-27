@@ -738,3 +738,48 @@
   background-color: var(--muted);
   color: var(--foreground);
 }
+
+@media (max-width: 1024px) {
+  .settings-page {
+    grid-template-columns: 1fr;
+  }
+  .settings-card-full {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-title {
+    font-size: 1.5rem;
+  }
+  .settings-profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-add-home-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .settings-add-home-btns {
+    flex-shrink: unset;
+  }
+  .member-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .settings-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .settings-inline-edit {
+    flex-wrap: wrap;
+  }
+  .settings-input-inline {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-panel-tabs {
+    flex-wrap: wrap;
+  }
+}

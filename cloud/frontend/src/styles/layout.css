@@ -5,6 +5,22 @@
   padding-right: 10%;
 }
 
+@media (max-width: 768px) {
+  .container,
+  .layout-container {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container,
+  .layout-container {
+    padding-left: 3%;
+    padding-right: 3%;
+  }
+}
+
 /* Shared Refresh Button */
 .refresh-btn {
   padding: 0.6rem 1.2rem;
@@ -27,4 +43,26 @@
   padding-left: 10%;
   padding-right: 10%;
   padding-top: 76px;
+}
+
+@media (max-width: 1600px) {
+  .content-padding {
+    padding-top: 66px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-padding {
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-top: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-padding {
+    padding-left: 3%;
+    padding-right: 3%;
+    padding-top: 56px;
+  }
 }

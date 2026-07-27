@@ -4,9 +4,9 @@ BASELINE_DAYS      = 30
 WARNING_THRESHOLD  = 2.5
 CRITICAL_THRESHOLD = 3.5
 MIN_READINGS       = 50
-CV_MAX             = 0.8    # skip senzori bimodali / ciclici (σ/μ > 0.8)
-COOLDOWN_HOURS     = 4      # ore între anomalii pentru aceeași entitate
-WINDOW_HOURS       = 1      # fereastra de detecție (cât de în urmă se uită jobul)
+CV_MAX             = 0.8    # skip bimodal / cyclic sensors (σ/μ > 0.8)
+COOLDOWN_HOURS     = 4      # minimum hours between anomalies for the same entity
+WINDOW_HOURS       = 1      # detection window — how far back the job looks
 
 
 def run_anomaly_detection(conn):
@@ -15,12 +15,12 @@ def run_anomaly_detection(conn):
     window_from   = now - timedelta(hours=WINDOW_HOURS)
     baseline_from = now - timedelta(days=BASELINE_DAYS)
 
-    # Cooldown: +WINDOW_HOURS compensează faptul că detected_at = recorded_at,
-    # care e cu până la WINDOW_HOURS în urmă față de momentul rulării jobului.
-    # Fără această compensare, cooldown-ul sare efectiv doar un run din două.
+    # Cooldown: +WINDOW_HOURS compensates for detected_at = recorded_at,
+    # which can be up to WINDOW_HOURS behind the actual job run time.
+    # Without this offset, the cooldown would effectively skip only every other run.
     cooldown_from = now - timedelta(hours=COOLDOWN_HOURS + WINDOW_HOURS)
 
-    # Entități active în ultima oră, excluse switch-uri, binary_sensor-uri, kWh și cele muted de utilizator
+    # Entities active in the last hour, excluding switches, binary sensors, kWh meters, and user-muted entities
     cur.execute("""
         SELECT DISTINCT m.home_id, m.entity_id
         FROM measurements m
@@ -38,7 +38,7 @@ def run_anomaly_detection(conn):
     skipped_cooldown = 0
 
     for home_id, entity_id in active_entities:
-        # Baseline: 30 de zile de date înainte de fereastra curentă
+        # Baseline: 30 days of data before the current detection window
         cur.execute("""
             SELECT AVG(value_numeric), STDDEV_POP(value_numeric), COUNT(*)
             FROM measurements
@@ -56,13 +56,13 @@ def run_anomaly_detection(conn):
         mean = float(mean_val)
         std  = float(std_val)
 
-        # Skip senzori bimodali/ciclici: distribuție prea largă față de medie.
-        # abs(mean) gestionează corect senzori cu medie negativă (ex. temperaturi sub 0°C).
+        # Skip bimodal/cyclic sensors: distribution too wide relative to the mean.
+        # abs(mean) handles sensors with a negative mean correctly (e.g. sub-zero temperatures).
         if abs(mean) > 1e-10 and std / abs(mean) > CV_MAX:
             skipped_cv += 1
             continue
 
-        # Cooldown: dacă a fost deja detectată o anomalie recent, sare entitatea
+        # Cooldown: skip entity if an anomaly was already detected recently
         cur.execute("""
             SELECT 1 FROM anomalies
             WHERE home_id = %s AND entity_id = %s
@@ -73,7 +73,7 @@ def run_anomaly_detection(conn):
             skipped_cooldown += 1
             continue
 
-        # Citirile noi din ultima oră
+        # New readings from the current detection window
         cur.execute("""
             SELECT value_numeric, recorded_at
             FROM measurements
@@ -83,9 +83,9 @@ def run_anomaly_detection(conn):
         """, (home_id, entity_id, window_from))
         readings = cur.fetchall()
 
-        # Inserează DOAR cea mai anormală citire (z maxim) din fereastra curentă.
-        # Astfel, un sensor care trimite 120 citiri/oră generează cel mult 1 anomalie
-        # per run, nu 120. Cooldown-ul împiedică re-detecția în run-urile următoare.
+        # Insert ONLY the most anomalous reading (highest z-score) from the current window.
+        # A sensor sending 120 readings/hour produces at most 1 anomaly per run, not 120.
+        # The cooldown prevents re-detection in subsequent runs.
         worst = None
         for value_raw, recorded_at in readings:
             value = float(value_raw)

@@ -1,4 +1,4 @@
-/* ── Sticky period bar ───────────────────────────────────────────────────── */
+/* Sticky period bar */
 
 .diag-period-bar {
   position: sticky;
@@ -6,8 +6,10 @@
   z-index: 20;
   background: var(--background);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
-  padding: 0.6rem 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 0.6rem 1rem 0.75rem;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: flex-start;
@@ -475,7 +477,7 @@
   text-decoration: underline;
 }
 
-/* ── Load more row ───────────────────────────────────────────────────────── */
+/* Load more row */
 
 .diag-load-more-row {
   display: flex;
@@ -495,7 +497,7 @@
 }
 
 
-/* ── Anomaly Management card ─────────────────────────────────────────────── */
+/* Anomaly Management card */
 
 .diag-mgmt-search {
   flex: 1;
@@ -632,4 +634,55 @@
 .diag-mgmt-toggle:disabled {
   opacity: 0.5;
   cursor: wait;
+}
+
+@media (max-width: 1600px) {
+  .diag-period-bar {
+    top: 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  .diag-period-bar {
+    top: 50px;
+    gap: 0.5rem;
+  }
+  .diag-title {
+    font-size: 1.5rem;
+  }
+  .diag-card {
+    padding: 1rem;
+  }
+  .diag-mgmt-header-row {
+    grid-template-columns: 1fr 80px 80px;
+    font-size: 0.68rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .diag-mgmt-row {
+    grid-template-columns: 1fr 80px 80px;
+    padding: 0.5rem 0.6rem;
+  }
+  .diag-anomaly-filters {
+    gap: 0.75rem 1rem;
+  }
+  .diag-card-header-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .diag-period-bar {
+    top: 46px;
+  }
+  .diag-mgmt-header-row {
+    grid-template-columns: 1fr 70px 70px;
+  }
+  .diag-mgmt-row {
+    grid-template-columns: 1fr 70px 70px;
+  }
+  .diag-mgmt-toggle {
+    padding: 0.2rem 0.4rem;
+    min-width: 40px;
+    font-size: 0.68rem;
+  }
 }

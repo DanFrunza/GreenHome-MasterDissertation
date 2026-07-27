@@ -77,8 +77,7 @@ def _handle_entity_discovery(home_id, payload):
                 state         = EXCLUDED.state,
                 available     = EXCLUDED.available,
                 last_seen     = NOW()
-                -- anomaly_muted și anomaly_suppressed sunt setate de utilizator,
-                -- nu se resetează la discovery
+                -- anomaly_muted and anomaly_suppressed are set by the user and not reset on discovery
         """, (
             entity["entity_id"],
             home_id,

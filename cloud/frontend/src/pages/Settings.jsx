@@ -8,7 +8,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import '../styles/Settings.css'
 import '../styles/Home.css'
 
-// ── Searchable dropdown ────────────────────────────────────────────────────────
+// Searchable dropdown 
 function SearchableSelect({ value, onChange, options, placeholder }) {
   const [search, setSearch] = useState('')
   const [open, setOpen]     = useState(false)
@@ -52,7 +52,7 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
   )
 }
 
-// ── Data ───────────────────────────────────────────────────────────────────────
+//  Data 
 const TIMEZONES = [
   { value: 'Europe/Bucharest',    label: 'Europe/Bucharest (EET, UTC+2)' },
   { value: 'Europe/London',       label: 'Europe/London (GMT, UTC+0)' },
@@ -115,7 +115,7 @@ const LANGUAGES = [
   { value: 'ko', label: '한국어' },
 ]
 
-// ── Copy button ────────────────────────────────────────────────────────────────
+// Copy button 
 function CopyBtn({ text }) {
   const [copied, setCopied] = useState(false)
   return (
@@ -133,7 +133,7 @@ function CopyBtn({ text }) {
   )
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
+// Component 
 export default function Settings() {
   usePageTitle('Settings')
   const { user, updateUser } = useUser()
@@ -248,7 +248,6 @@ export default function Settings() {
       .finally(() => setMembersLoading(false))
   }, [selectedHome])
 
-  // Fix 1 — detect unsaved profile changes
   const profileDirty =
     displayName          !== (user?.display_name || '') ||
     phone                !== (user?.phone || '') ||
@@ -349,7 +348,6 @@ export default function Settings() {
     }
   }
 
-  // Fix 3 — no window.confirm, state drives inline confirmation
   const handleRegenMqtt = async () => {
     setConfirmRegen(false)
     setMqttLoading(true)
@@ -415,7 +413,6 @@ export default function Settings() {
     }
   }
 
-  // Fix 3 — no window.confirm for role changes
   const handleRoleChange = async (memberId, newRole) => {
     if (newRole === 'owner' && confirmOwnerTransferId !== memberId) {
       setConfirmOwnerTransferId(memberId)
@@ -449,7 +446,6 @@ export default function Settings() {
     }
   }
 
-  // no window.confirm for remove
   const handleRemoveMember = async (memberId) => {
     setConfirmRemoveId(null)
     const res = await apiFetch(
@@ -679,7 +675,6 @@ export default function Settings() {
             </label>
           </div>
 
-          {/* Fix 1 — unsaved indicator + save button */}
           <div className="settings-save-row">
             <button
               className="settings-btn-primary"
@@ -694,7 +689,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Security — password change */}
         <div className="stats-section-card settings-card">
           <h2 className="stats-section-title settings-section-title">Security</h2>
           <p className="stats-section-subtitle">Change your account password.</p>
@@ -892,7 +886,6 @@ export default function Settings() {
                   <button className="settings-btn-secondary" onClick={() => setMqttCreds(null)}>Done</button>
                 </>
               ) : isOwner && (
-                /* Fix 3 — inline confirmation for MQTT regen */
                 confirmRegen ? (
                   <div className="settings-confirm-regen">
                     <p className="settings-muted">This will invalidate the current MQTT password and disconnect your local agent until you update the config.</p>
@@ -935,7 +928,6 @@ export default function Settings() {
                       </select>
                     </div>
 
-                    {/* Fix 2 — show saved value as hint under each tariff field */}
                     <div className="settings-profile-field">
                       <label className="settings-field-label">Flat rate ({currency}/kWh)</label>
                       <input className="settings-input" type="number" step="0.0001" min="0"

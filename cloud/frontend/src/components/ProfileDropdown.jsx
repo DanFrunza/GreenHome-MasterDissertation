@@ -26,7 +26,7 @@ export default function ProfileDropdown() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   const handleTheme = async (theme) => {

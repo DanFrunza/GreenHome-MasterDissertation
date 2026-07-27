@@ -23,30 +23,40 @@ export default function Navbar() {
   const location = useLocation()
   const { homes, selectedHome, setSelectedHome } = useHome()
   const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const ref = useRef(null)
 
   useClickOutside(ref, () => setOpen(false))
 
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-logo">
+      <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
         <svg className="navbar-logo-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
           <path d="M13 2L4.5 13.5H11L10 22L20.5 10H14L13 2Z" />
         </svg>
         <span>GreenNest</span>
       </Link>
 
-      <div className="navbar-links">
+      <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
         {NAV_ITEMS.map(({ path, label }) => (
           <Link
             key={path}
             to={path}
             className={`nav-link ${location.pathname === path ? 'active' : ''}`}
+            onClick={() => setMenuOpen(false)}
           >
             {label}
           </Link>
         ))}
       </div>
+
+      <button
+        className="navbar-hamburger"
+        onClick={() => setMenuOpen(prev => !prev)}
+        aria-label="Toggle menu"
+      >
+        {menuOpen ? '✕' : '☰'}
+      </button>
 
       {homes.length > 0 && (
         <div className="home-selector" ref={ref}>

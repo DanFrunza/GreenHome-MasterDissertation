@@ -1,3 +1,4 @@
+# Fetches the current entity list from Home Assistant and publishes it to the local broker.
 import asyncio
 import json
 import threading
@@ -15,6 +16,7 @@ async def _fetch_entities():
         if auth.get("type") != "auth_ok":
             raise Exception(f"Auth failed: {auth}")
 
+        # Fetch live states and entity registry in one WebSocket session
         await ws.send(json.dumps({"id": 1, "type": "get_states"}))
         states_msg = json.loads(await ws.recv())
         states = {s["entity_id"]: s for s in states_msg.get("result", [])}
@@ -23,6 +25,7 @@ async def _fetch_entities():
         registry_msg = json.loads(await ws.recv())
         registry = {e["entity_id"]: e for e in registry_msg.get("result", [])}
 
+    # Filter and normalise into the cloud schema
     entities = []
     for entity_id, state in states.items():
         domain = entity_id.split(".")[0]

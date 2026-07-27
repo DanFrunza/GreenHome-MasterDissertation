@@ -495,3 +495,50 @@
   font-size: 0.875rem;
   color: var(--foreground);
 }
+
+@media (max-width: 768px) {
+  .automations-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .automations-header-right {
+    width: 100%;
+    flex-wrap: wrap;
+    margin-top: 0;
+  }
+  .automations-search-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  .automations-search-input {
+    width: 100%;
+  }
+  .automations-title {
+    font-size: 1.5rem;
+  }
+  .automation-pipeline {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.5rem;
+  }
+  .pipeline-step {
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  .automation-card-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .automation-pipeline {
+    gap: 0;
+  }
+  .pipeline-arrow {
+    padding: 0 0.4rem;
+  }
+  .raw-config-modal {
+    max-height: 90vh;
+  }
+}

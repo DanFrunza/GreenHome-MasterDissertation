@@ -25,7 +25,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
 
   const isEnergyKwh = deviceClass === 'energy' || unit === 'kWh'
 
-  // ResizeObserver — rulează și după loading (când containerRef apare în DOM)
+  // ResizeObserver — also runs after loading (when containerRef appears in the DOM)
   useEffect(() => {
     if (!containerRef.current) return
     const obs = new ResizeObserver(entries => setContainerWidth(entries[0].contentRect.width))
@@ -50,7 +50,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
       apiFetch(`${API_URL}/homes/${homeId}/entities/${entityId}/predictions`)
         .then(r => r.json()),
     ]).then(([aggRows, predRows]) => {
-      // Istorice zilnice
+      // Daily historical aggregates
       const hist = (Array.isArray(aggRows) ? aggRows : []).map(r => ({
         date:  new Date(r.period_start),
         value: isEnergyKwh
@@ -58,7 +58,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
           : parseFloat(r.avg_value),
       })).filter(d => d.value != null && !isNaN(d.value))
 
-      // Agregă predicțiile orare → zilnice
+      // Aggregate hourly predictions into daily values
       const byDay = {}
       ;(Array.isArray(predRows) ? predRows : []).forEach(p => {
         const d   = new Date(p.target_time)
@@ -117,7 +117,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
     const [minV, maxV] = d3.extent(allVals)
     const pad = (maxV - minV) * 0.15 || 1
 
-    // Extinde domeniul y să includă și limita superioară a benzii de incertitudine
+    // Extend y domain to include the upper uncertainty band limit
     const bandFactor = uncertaintyPct / 100
     const bandMax    = predData.length
       ? d3.max(predData, d => d.value * (1 + bandFactor))
@@ -140,7 +140,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
       .defined(d => d.value != null && !isNaN(d.value))
       .curve(d3.curveMonotoneX)
 
-    // Bandă incertitudine (±uncertaintyPct%)
+    // Uncertainty band (±uncertaintyPct%)
     if (predData.length > 1) {
       /** @type {import('d3').Area<{date: Date, value: number, modelType?: string}>} */
       const areaGen = /** @type {any} */ (d3.area())
@@ -155,7 +155,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', areaGen)
     }
 
-    // Linie istorică
+    // Historical line
     if (histData.length) {
       svg.append('path')
         .datum(histData)
@@ -164,7 +164,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', lineGen)
     }
 
-    // Conector: ultimul punct istoric → primul punct de prognoză
+    // Connector: last historical point → first forecast point
     const lastHist  = histData[histData.length - 1]
     const firstPred = predData[0]
     if (lastHist && firstPred) {
@@ -175,7 +175,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('stroke-dasharray', '4 3').attr('opacity', 0.45)
     }
 
-    // Linie prognoză (punctată)
+    // Forecast line (dashed)
     if (predData.length) {
       svg.append('path')
         .datum(predData)
@@ -185,7 +185,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .attr('d', lineGen)
     }
 
-    // Linie "Now"
+    // "Now" vertical marker
     const nowMidnight = new Date()
     nowMidnight.setHours(0, 0, 0, 0)
     const nowX = xScale(nowMidnight)
@@ -201,7 +201,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         .text('Now')
     }
 
-    // Puncte interactive
+    // Interactive dots
     const allDots = allData.filter(d => d.value != null && !isNaN(d.value))
     svg.append('g').selectAll('circle')
       .data(allDots).join('circle')
@@ -220,7 +220,7 @@ export default function PredictionChart({ homeId, entityId, unit, deviceClass, u
         setTooltip(null)
       })
 
-    // Axe
+    // Axes
     svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(xScale).ticks(7).tickFormat(d3.timeFormat('%b %d')).tickSize(0))
